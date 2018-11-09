@@ -24,7 +24,6 @@ import { MapService } from './services/map.service';
         HttpClientModule,
         AppRoutingModule,
         BrowserAnimationsModule,
-        HttpLinkModule,
         MatButtonModule,
         MatCheckboxModule
     ],
