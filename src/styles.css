@@ -1,8 +1,6 @@
+@import "~@angular/material/prebuilt-themes/indigo-pink.css";
 
 * {
-    font-family: 'Roboto';
-    font-weight: 300;
-    color: #333;
 }
 
 @font-face {
