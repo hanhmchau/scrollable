@@ -1,18 +1,8 @@
-import { firstAvailableDate, getAverage } from './../services/index';
-import { Router, Request, Response } from 'express';
+import { Request, Response, Router } from 'express';
 import asynchronify from '../middlewares/async';
-import { parse } from 'date-fns';
-import { closePrice } from '../services';
-import Error from '../models/error';
+import { closePrice, createError, movingDayAverage } from '../services';
 
 const router = Router();
-
-const createError = (e: any) => {
-    const data = e.response.data;
-    const message = data.quandl_error.message;
-    delete data.quandl_error;
-    return new Error(message, data.errors);
-};
 
 router.get(
     '/:ticker/close-price',
@@ -20,11 +10,7 @@ router.get(
         const { startDate = '', endDate = '' } = { ...req.query };
         const ticker = req.params.ticker;
         try {
-            const data = await closePrice(
-                ticker,
-                parse(startDate),
-                parse(endDate)
-            );
+            const data = await closePrice(ticker, startDate, endDate);
             res.json({
                 prices: {
                     ticker,
@@ -43,30 +29,33 @@ router.get(
         // tslint:disable-next-line:no-unnecessary-initializer
         const { startDate = '', days = 200 } = { ...req.query };
         const ticker = req.params.ticker;
-        try {
-            if (startDate) {
-                const mda = await getAverage(ticker, startDate, days);
-                if (mda) {
-                    res.json({
-                        '200dma': {
-                            ticker,
-                            average: mda
-                        }
-                    });
-                    return;
-                }
-            }
-            const date = firstAvailableDate(ticker);
-            res.status(404).json(
-                new Error(
-                    'Start date parameter is missing. Please check your API syntax and try again.',
-                    {
-                        first_possible_date: date
-                    }
-                )
-            );
-        } catch (e) {
-            res.status(404).json(createError(e));
+        const result = await movingDayAverage(ticker, startDate, days);
+        res.status(result.succeeded ? 200 : 404).json(result.data);
+    })
+);
+
+router.get(
+    '/multi200mda',
+    asynchronify(async (req: Request, res: Response) => {
+        // tslint:disable-next-line:no-unnecessary-initializer
+        const { startDate = '', days = 200 } = { ...req.query };
+        const tickerString = req.query.ticker;
+        const tickers: string[] = tickerString.split(',');
+        if (startDate) {
+            const results = {};
+            Promise.all(
+                tickers.map(ticker => movingDayAverage(ticker, startDate, days))
+            ).then(tickerResults => {
+                tickerResults.forEach((result, index) => {
+                    (results as any)[tickers[index]] = result;
+                });
+                res.json(results);
+            });
+        } else {
+            res.status(404).json({
+                message:
+                    'Start date parameter is missing. Please check your API syntax and try again'
+            });
         }
     })
 );

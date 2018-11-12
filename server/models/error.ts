@@ -1,9 +1,9 @@
 export default class Error {
     message?: string;
-    errors?: any;
+    info?: any;
 
-    constructor(message: string, errors: any) {
+    constructor(message: string, info: any) {
         this.message = message;
-        this.errors = errors;
+        this.info = info;
     }
 }
