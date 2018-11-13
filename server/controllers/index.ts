@@ -1,8 +1,14 @@
 import { Request, Response, Router } from 'express';
 import asynchronify from '../middlewares/async';
-import { closePrice, createError, movingDayAverage } from '../services';
+import { closePrice, createError, movingDayAverage, getTickers } from '../services';
 
 const router = Router();
+
+router.get('/tickers', asynchronify(async (req: Request, res: Response) => {
+    const { top = 0, search = '' } = { ...req.query };
+    const tickers = await getTickers(search, top);
+    res.json(tickers);
+}));
 
 router.get(
     '/:ticker/close-price',
@@ -47,7 +53,17 @@ router.get(
                 tickers.map(ticker => movingDayAverage(ticker, startDate, days))
             ).then(tickerResults => {
                 tickerResults.forEach((result, index) => {
-                    (results as any)[tickers[index]] = result;
+                    if (result.succeeded) {
+                        const res = {
+                            average: (result.data as any)["200dma"].average
+                        };
+                        (results as any)[tickers[index]] = {
+                            succeeded: true,
+                            data: res
+                        }
+                    } else {
+                        (results as any)[tickers[index]] = result;
+                    }
                 });
                 res.json(results);
             });
