@@ -1,26 +1,45 @@
 import axios from 'axios';
-import {
-    addDays,
-    format,
-    parse,
-    isWithinRange,
-    eachDay,
-    differenceInCalendarDays,
-    isEqual
-} from 'date-fns';
+import { addDays, differenceInCalendarDays, eachDay, format, isEqual, isWithinRange, parse } from 'date-fns';
+import * as fs from 'fs';
+import * as NodeCache from 'node-cache';
+import * as path from 'path';
+import { promisify } from 'util';
 import consts from '../consts';
 import Error from '../models/error';
-import * as NodeCache from 'node-cache';
 const dateFormat = 'YYYY-MM-DD';
 const quandlUrl = 'https://www.quandl.com/api/v3/datasets/WIKI';
 const cache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
 
+const readFile = promisify(fs.readFile);
+
+export const getTickers = async (search: string, top: number) => {
+    const data = await readFile(path.join(__dirname, '../tickers.json'));
+    let tickers: any[] = JSON.parse(data.toString()).sort((a: any, b: any) => {
+        const tickerA: string = a.ticker;
+        const tickerB: string = b.ticker;
+        return tickerA.localeCompare(tickerB);
+    });
+    if (search) {
+        tickers = tickers.filter(ticker =>
+            (ticker.ticker as string).includes(search)
+        );
+    }
+    if (top) {
+        tickers = tickers.slice(0, top);
+    }
+    console.log(tickers);
+    return tickers;
+};
+
 export const createError = (e: any) => {
-    console.log(e);
-    const data = e.response.data;
-    const message = data.quandl_error.message;
-    delete data.quandl_error;
-    return new Error(message, data.errors);
+    try {
+        const data = e.response.data;
+        const message = data.quandl_error
+            ? data.quandl_error.message
+            : undefined;
+        delete data.quandl_error;
+        return new Error(message, data.errors);
+    } catch (e) {}
 };
 
 const formatDate = (date: Date | string) => {
@@ -189,13 +208,11 @@ const getAverage = async (
 ) => {
     const endDate = addDays(startDate, days);
     const result = await getEndOfDays(ticker, startDate, endDate);
-    const dataset = result.data.dataset_data;
-    if (dataset.data.length) {
+    const dataset = result.data;
+    if (dataset.length) {
         return (
-            dataset.data.reduce(
-                (prev: number, curr: any[]) => prev + curr[1],
-                0
-            ) / dataset.data.length
+            dataset.reduce((prev: number, curr: any[]) => prev + curr[1], 0) /
+            dataset.length
         );
     }
 };
