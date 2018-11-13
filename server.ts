@@ -24,6 +24,20 @@ app.use(cookieParser());
 // api router
 app.use('/api', mainController);
 
+const app2: express.Application = express();
+app2.use(cors({
+    origin: '*',
+    optionsSuccessStatus: 200
+}));
+
+app2.use(express.json());
+app2.use(express.urlencoded({ extended: false }));
+app2.use(bodyParser.urlencoded({
+    extended: true
+}));
+app2.use(cookieParser());
+app.listen(3000);
+
 // the __dirname is the current directory from where the script is running
 const dist = path.resolve(__dirname, 'dist');
 app.use(express.static(dist));
