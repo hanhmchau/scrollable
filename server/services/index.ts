@@ -30,31 +30,93 @@ const formatDate = (date: Date | string) => {
     return format(date, dateFormat);
 };
 
-const getEndOfDays = async (
+const extractFromCache = (
     ticker: string,
     startDate: Date | string,
     endDate: Date | string
 ) => {
     const cachedResult: any = cache.get(ticker);
-    const start = format(startDate, dateFormat);
-    const end = format(endDate, dateFormat);
+    let start = format(startDate, dateFormat);
+    let end = format(endDate, dateFormat);
     if (cachedResult) {
         const data = [];
-        for (const res in cachedResult) {
-            if (cachedResult.hasOwnProperty(res)) {
+        const cachedBounds = cachedResult.bounds;
+        if (!startDate && cachedBounds.start) {
+            start = cachedBounds.start;
+        }
+        if (!endDate && cachedBounds.end) {
+            end = cachedBounds.end;
+        }
+        const cachedDates = cachedResult.dates;
+        for (const res in cachedDates) {
+            if (cachedDates.hasOwnProperty(res)) {
                 if (isWithinRange(res, start, end)) {
-                    data.push([res, cachedResult[res].value]);
+                    data.push([res, cachedDates[res]]);
                 }
             }
         }
         if (differenceInCalendarDays(end, start) + 1 === data.length) {
+            const actualData = data.filter(d => d[1] !== -1);
+            const realStartDate = actualData.length
+                ? actualData[0][0]
+                : startDate;
+            const realEndDate = actualData.length
+                ? actualData[actualData.length - 1][0]
+                : endDate;
             return {
-                startDate: data[0][0],
-                endDate: data[data.length - 1][0],
+                start_date: realStartDate,
+                end_date: realEndDate,
                 data: data.filter(d => d[1] !== -1)
             };
         }
     }
+};
+
+const cacheResult = (
+    ticker: string,
+    startDate: Date | string,
+    endDate: Date | string,
+    dataset: any
+) => {
+    const cachedResult: any = cache.get(ticker);
+    const newCacheResult: any = cachedResult || {};
+    const bounds = newCacheResult.bounds || {};
+    const dates = newCacheResult.dates || {};
+
+    if (!startDate) {
+        bounds.start = dataset.start_date;
+    }
+    if (!endDate) {
+        bounds.end = dataset.end_date;
+    }
+
+    const dat = dataset.data;
+    const receivedStart = format(dataset.start_date, dateFormat);
+    const receivedEnd = format(dataset.end_date, dateFormat);
+    let i = 0;
+    eachDay(startDate || receivedStart, endDate || receivedEnd).forEach(day => {
+        if (dat[i] && isEqual(dat[i][0], day)) {
+            dates[format(day, dateFormat)] = dat[i][1];
+            i++;
+        } else {
+            dates[format(day, dateFormat)] = -1;
+        }
+    });
+    newCacheResult.dates = dates;
+    newCacheResult.bounds = bounds;
+    cache.set(ticker, newCacheResult);
+};
+
+const getEndOfDays = async (
+    ticker: string,
+    startDate: Date | string,
+    endDate: Date | string
+) => {
+    const cachedResult = extractFromCache(ticker, startDate, endDate);
+    if (cachedResult) {
+        return cachedResult;
+    }
+
     const response = await axios.get(`${quandlUrl}/${ticker}/data.json`, {
         params: {
             start_date: formatDate(startDate),
@@ -64,22 +126,8 @@ const getEndOfDays = async (
             column_index: consts.COLUMN_INDEX.END_OF_DAY
         }
     });
-
-    const newCacheResult: any = cachedResult || {};
     const dataset = response.data.dataset_data;
-    const dat = dataset.data;
-    const receivedStart = format(dataset.start_date, dateFormat);
-    const receivedEnd = format(dataset.end_date, dateFormat);
-    let i = 0;
-    eachDay(startDate || receivedStart, endDate || receivedEnd).forEach(day => {
-        if (isEqual(dat[i], day)) {
-            newCacheResult[format(day, dateFormat)] = dat[i][1];
-            i++;
-        } else {
-            newCacheResult[format(day, dateFormat)] = -1;
-        }
-    });
-    cache.set(ticker, newCacheResult);
+    cacheResult(ticker, startDate, endDate, dataset);
     return response.data.dataset_data;
 };
 
