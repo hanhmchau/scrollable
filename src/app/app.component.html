@@ -1,11 +1,8 @@
 <mat-toolbar class="mat-elevation-z4" color="primary">
     <mat-icon class="logo">graphic_eq</mat-icon>
-    <span class="title">Sentifi Graph</span>
+    <a [routerLink]="['/']"><span class="title">Sentifi Graph</span></a>
     <span class="example-spacer"></span>
     <mat-icon class="example-icon">favorite</mat-icon>
     <mat-icon class="example-icon">delete</mat-icon>
 </mat-toolbar>
-<div class="container">
-    <app-search></app-search>
-    <button mat-raised-button color="light">View</button>
-</div>
+<div class="container"><router-outlet></router-outlet></div>

@@ -2,7 +2,8 @@
     padding: 0 14px;
 }
 
-.mat-toolbar-row, .mat-toolbar-single-row {
+.mat-toolbar-row,
+.mat-toolbar-single-row {
     height: 54px !important;
     font-size: 17px;
 }
@@ -11,8 +12,18 @@
     flex: 1 1 auto;
 }
 
-.logo, .title {
-	padding-left: .5rem;
+.logo,
+.title {
+    padding-left: 0.5rem;
+    color: white;
+    text-decoration: none;
+}
+
+a:hover,
+a:visited,
+a:link,
+a:active {
+    text-decoration: none;
 }
 
 .container {
@@ -22,10 +33,7 @@
     align-items: center;
     justify-content: center;
     flex-direction: column;
-}
-
-.container > * {
-    transform: translateY(-10vh);
+    position: relative;
 }
 
 /* // Extra small devices (portrait phones, less than 576px)
