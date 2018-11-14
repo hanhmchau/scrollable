@@ -1,0 +1,22 @@
+form {
+    width: 500px;
+}
+
+.full-width {
+    width: 100%;
+}
+
+.symbol {
+    font-weight: bold;
+}
+
+.company {
+    display: inline-block;
+    margin-left: 5px;
+    color: #424242;
+}
+
+.container {
+    text-align: center;
+    transform: translateY(-10vh);
+}
