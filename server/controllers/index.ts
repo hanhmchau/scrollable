@@ -1,14 +1,49 @@
 import { Request, Response, Router } from 'express';
 import asynchronify from '../middlewares/async';
-import { closePrice, createError, movingDayAverage, getTickers } from '../services';
+import {
+    closePrice,
+    createError,
+    getTickers,
+    movingDayAverage
+} from '../services';
+import { getFullName } from './../services/index';
 
 const router = Router();
 
-router.get('/tickers', asynchronify(async (req: Request, res: Response) => {
-    const { top = 0, search = '' } = { ...req.query };
-    const tickers = await getTickers(search, top);
-    res.json(tickers);
-}));
+router.get(
+    '/tickers',
+    asynchronify(async (req: Request, res: Response) => {
+        const { top = 0, search = '' } = { ...req.query };
+        if (isNaN(parseInt(top, 10))) {
+            res.status(400).json({
+                error: `You provided ${top} for the number of returned results. This is not a valid number.`
+            });
+            return;
+        }
+        const tickers = await getTickers(search, top);
+        res.json(tickers);
+    })
+);
+
+router.get(
+    '/:ticker/full-name',
+    asynchronify(async (req: Request, res: Response) => {
+        const ticker = req.params.ticker;
+        try {
+            const name = await getFullName(ticker);
+            if (name) {
+                res.json(name);
+            } else {
+                res.status(404).json({
+                    message:
+                        'You have submitted an incorrect Quandl code. Please check your Quandl codes and try again'
+                });
+            }
+        } catch (e) {
+            res.status(404).json(createError(e));
+        }
+    })
+);
 
 router.get(
     '/:ticker/close-price',
@@ -55,12 +90,12 @@ router.get(
                 tickerResults.forEach((result, index) => {
                     if (result.succeeded) {
                         const res = {
-                            average: (result.data as any)["200dma"].average
+                            average: (result.data as any)['200dma'].average
                         };
                         (results as any)[tickers[index]] = {
                             succeeded: true,
                             data: res
-                        }
+                        };
                     } else {
                         (results as any)[tickers[index]] = result;
                     }

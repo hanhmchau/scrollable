@@ -1,5 +1,13 @@
 import axios from 'axios';
-import { addDays, differenceInCalendarDays, eachDay, format, isEqual, isWithinRange, parse } from 'date-fns';
+import {
+    addDays,
+    differenceInCalendarDays,
+    eachDay,
+    format,
+    isEqual,
+    isWithinRange,
+    parse
+} from 'date-fns';
 import * as fs from 'fs';
 import * as NodeCache from 'node-cache';
 import * as path from 'path';
@@ -10,24 +18,47 @@ const dateFormat = 'YYYY-MM-DD';
 const quandlUrl = 'https://www.quandl.com/api/v3/datasets/WIKI';
 const cache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
 
+export const getFullName = async (symbol: string) => {
+    const data = await readFile(path.join(__dirname, '../tickers.json'));
+    const tickers: any[] = JSON.parse(data.toString());
+    const comp = tickers.find(t => t.symbol === symbol);
+    if (!comp) {
+        return;
+    }
+    const name = comp.company as string;
+    comp.company = name.includes('(')
+        ? name.substring(0, name.indexOf('(')).trim()
+        : name;
+    return comp;
+};
+
 const readFile = promisify(fs.readFile);
 
 export const getTickers = async (search: string, top: number) => {
     const data = await readFile(path.join(__dirname, '../tickers.json'));
     let tickers: any[] = JSON.parse(data.toString()).sort((a: any, b: any) => {
-        const tickerA: string = a.ticker;
-        const tickerB: string = b.ticker;
+        const tickerA: string = a.symbol;
+        const tickerB: string = b.symbol;
+        if (tickerA.startsWith(search.toUpperCase())) {
+            return -1;
+        }
+        if (tickerB.startsWith(search.toUpperCase())) {
+            return 1;
+        }
         return tickerA.localeCompare(tickerB);
     });
     if (search) {
-        tickers = tickers.filter(ticker =>
-            (ticker.ticker as string).includes(search)
+        tickers = tickers.filter(
+            ticker =>
+                (ticker.symbol as string).includes(search.toUpperCase()) ||
+                (ticker.company as string)
+                    .toLowerCase()
+                    .includes(search.toLowerCase())
         );
     }
     if (top) {
         tickers = tickers.slice(0, top);
     }
-    console.log(tickers);
     return tickers;
 };
 
