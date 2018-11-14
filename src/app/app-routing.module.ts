@@ -1,13 +1,18 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { NotFoundComponent } from './not-found/not-found.component';
+import { SearchContainerComponent } from './search-container/search-container.component';
+import { GraphComponent } from './graph/graph.component';
 
 const routes: Routes = [
-    // {
-    //     path: '',
-    //     component: AddressContainerComponent,
-    //     pathMatch: 'full'
-    // }
+    {
+        path: '',
+        component: SearchContainerComponent,
+        pathMatch: 'full'
+    },
+    {
+        path: 'ticker/:symbol',
+        component: GraphComponent
+    }
 ];
 
 @NgModule({
