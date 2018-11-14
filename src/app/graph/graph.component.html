@@ -7,7 +7,7 @@
         <span class="mat-headline">{{ company.company }}</span>
         <span class="subtitle mat-small">{{ symbol }}</span>
         <div class="float-right">
-            <mat-spinner *ngIf="reloading"></mat-spinner>
+            <mat-spinner diameter="18" *ngIf="reloading"></mat-spinner>
             <mat-form-field class="duration-select">
                 <mat-select
                     [(ngModel)]="chosenDuration"
