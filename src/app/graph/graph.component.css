@@ -1,0 +1,21 @@
+.container {
+    max-width: 1400px !important;
+    margin: auto;
+    left: 20px;
+    right: 20px;
+    top: 55px;
+    bottom: 150px;
+}
+
+.card {
+    margin-bottom: 20px;
+}
+
+.float-right {
+    float: right;
+}
+
+.subtitle {
+    display: inline-block;
+    margin-left: 10px;
+}

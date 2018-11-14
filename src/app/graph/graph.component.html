@@ -1,0 +1,45 @@
+<div
+    class="container"
+    *ngIf="graphInput; else: noResult"
+    style="position: absolute;"
+>
+    <div class="card" *ngIf="company">
+        <span class="mat-headline">{{ company.company }}</span>
+        <span class="subtitle mat-small">{{ symbol }}</span>
+        <div class="float-right">
+            <mat-spinner *ngIf="reloading"></mat-spinner>
+            <mat-form-field class="duration-select">
+                <mat-select
+                    [(ngModel)]="chosenDuration"
+                    (selectionChange)="durationChanged($event)"
+                >
+                    <mat-option
+                        *ngFor="let duration of durations"
+                        [value]="duration.duration"
+                        >{{ duration.label }}</mat-option
+                    >
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </div>
+    <ngx-charts-line-chart
+        [scheme]="'picnic'"
+        showGridLines="false"
+        [results]="graphInput.data"
+        [gradient]="false"
+        [xAxis]="true"
+        [yAxis]="true"
+        [legend]="graphInput.data.length > 1"
+        [showXAxisLabel]="false"
+        [showYAxisLabel]="false"
+        [autoScale]="true"
+        [timeline]="false"
+    >
+    </ngx-charts-line-chart>
+</div>
+<ng-template #noResult>
+    <ng-container *ngIf="loading; else: elseTemplate">
+        <mat-spinner></mat-spinner>
+    </ng-container>
+    <ng-template #elseTemplate> <app-not-found></app-not-found> </ng-template>
+</ng-template>
