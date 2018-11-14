@@ -5,3 +5,13 @@ form {
 .full-width {
     width: 100%;
 }
+
+.symbol {
+    font-weight: bold;
+}
+
+.company {
+    display: inline-block;
+    margin-left: 5px;
+    color: #424242;
+}

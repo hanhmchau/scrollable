@@ -8,14 +8,18 @@
             [formControl]="myControl"
             [matAutocomplete]="auto"
         />
-        <mat-autocomplete #auto="matAutocomplete">
+        <mat-autocomplete
+            #auto="matAutocomplete"
+            autoActiveFirstOption="true"
+            (optionSelected)="tickerSelected($event)"
+        >
             <mat-option
                 *ngFor="let option of (filteredOptions | async)"
-                [value]="option.name"
+                [value]="option.symbol"
             >
                 <div>
-                    <span>{{option.name}}</span>
-                    <span>{{option.origin}}</span>
+                    <span class="mat-h4 symbol">{{ option.symbol }}</span>
+                    <span class="mat-small company">{{ option.company }}</span>
                 </div>
             </mat-option>
         </mat-autocomplete>

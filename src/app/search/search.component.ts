@@ -1,7 +1,11 @@
+import { Router } from '@angular/router';
+import { TickerService } from './../services/ticker.service';
 import { Component } from '@angular/core';
 import { FormControl } from '@angular/forms';
 import { Observable } from 'rxjs';
-import { startWith, map } from 'rxjs/operators';
+import { distinctUntilChanged, debounceTime, switchMap } from 'rxjs/operators';
+import Ticker from '../models/ticker';
+import { MatAutocompleteSelectedEvent } from '@angular/material';
 
 @Component({
     selector: 'app-search',
@@ -10,30 +14,19 @@ import { startWith, map } from 'rxjs/operators';
 })
 export class SearchComponent {
     myControl = new FormControl();
-    options: any[] = [
-        {
-            name: 'One',
-            origin: 'US'
-        },
-        {
-            name: 'Two',
-            origin: 'UK'
-        }
-    ];
-    filteredOptions: Observable<string[]>;
+    filteredOptions: Observable<Ticker[]>;
+
+    constructor(private tickerService: TickerService, private router: Router) {}
 
     ngOnInit() {
         this.filteredOptions = this.myControl.valueChanges.pipe(
-            startWith(''),
-            map(value => this._filter(value))
+            debounceTime(150),
+            distinctUntilChanged(),
+            switchMap(value => this.tickerService.searchTickers(value))
         );
     }
 
-    private _filter(value: string): string[] {
-        const filterValue = value.toLowerCase();
-
-        return this.options.filter(option =>
-            option.name.toLowerCase().includes(filterValue)
-        );
+    tickerSelected(event: MatAutocompleteSelectedEvent) {
+        this.router.navigate([`/ticker/${event.option.value}`]);
     }
 }
