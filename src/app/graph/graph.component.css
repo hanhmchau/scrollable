@@ -1,5 +1,5 @@
 .container {
-    max-width: 1400px !important;
+    max-width: 1200px !important;
     margin: auto;
     left: 20px;
     right: 20px;
@@ -11,12 +11,16 @@
     margin-bottom: 20px;
 }
 
-.float-right {
+.duration {
     float: right;
     display: flex;
     flex-direction:row;
     justify-content: center;
     align-items: center;
+}
+
+.duration-select {
+    margin-left: 10px;
 }
 
 .subtitle {

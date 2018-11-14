@@ -6,7 +6,7 @@
     <div class="card" *ngIf="company">
         <span class="mat-headline">{{ company.company }}</span>
         <span class="subtitle mat-small">{{ symbol }}</span>
-        <div class="float-right">
+        <div class="duration">
             <mat-spinner diameter="18" *ngIf="reloading"></mat-spinner>
             <mat-form-field class="duration-select">
                 <mat-select
