@@ -1,11 +1,11 @@
-import { Router } from '@angular/router';
-import { TickerService } from './../services/ticker.service';
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { Observable } from 'rxjs';
-import { distinctUntilChanged, debounceTime, switchMap } from 'rxjs/operators';
-import Ticker from '../models/ticker';
 import { MatAutocompleteSelectedEvent } from '@angular/material';
+import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import Ticker from '../models/ticker';
+import { TickerService } from './../services/ticker.service';
 
 @Component({
     selector: 'app-search',
@@ -15,6 +15,7 @@ import { MatAutocompleteSelectedEvent } from '@angular/material';
 export class SearchComponent {
     myControl = new FormControl();
     filteredOptions: Observable<Ticker[]>;
+    @Output() onTickerSelected = new EventEmitter<string>();
 
     constructor(private tickerService: TickerService, private router: Router) {}
 
@@ -27,6 +28,6 @@ export class SearchComponent {
     }
 
     tickerSelected(event: MatAutocompleteSelectedEvent) {
-        this.router.navigate([`/ticker/${event.option.value}`]);
+        this.onTickerSelected.emit(event.option.value);
     }
 }
