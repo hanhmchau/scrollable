@@ -17,7 +17,7 @@ export class TickerService {
         symbol: string,
         startDate: Date,
         endDate: Date
-    ): Observable<GraphInput> {
+    ): Observable<GraphSeries> {
         let params = new HttpParams();
         if (startDate) {
             params = params.set(
@@ -37,7 +37,6 @@ export class TickerService {
                 map((data: any) => {
                     if (data) {
                         const dataset: any[][] = data.prices.dateClose.data;
-                        const graphInput = new GraphInput();
                         const graphSeries = new GraphSeries();
                         graphSeries.name = symbol;
                         dataset.forEach(el => {
@@ -47,8 +46,7 @@ export class TickerService {
                                 value: el[1] as number
                             });
                         });
-                        graphInput.data.push(graphSeries);
-                        return graphInput;
+                        return graphSeries;
                     }
                 })
             );
@@ -77,9 +75,8 @@ export class TickerService {
 
     getFullName(symbol: string): Observable<any> {
         return this.http
-            .get<any>(`/api/${symbol}/full-name`).pipe(
-                catchError(err => of(undefined))
-            );
+            .get<any>(`/api/${symbol}/full-name`)
+            .pipe(catchError(err => of(undefined)));
     }
 
     private queryTickers(search: string): Observable<Ticker[]> {

@@ -1,6 +1,6 @@
 <div
     class="container"
-    *ngIf="graphInput; else: noResult"
+    *ngIf="graphInput.data.length > 0; else: noResult"
     style="position: absolute;"
 >
     <div class="card" *ngIf="company">
@@ -21,6 +21,16 @@
                 </mat-select>
             </mat-form-field>
         </div>
+    </div>
+    <div>
+        <app-search
+            width="550px"
+            placeholder="Compare to: "
+            multiple="true"
+            [dontShowThis]="[symbol]"
+            (onTickerSelected)="addComparison($event)"
+            (onTickerDeleted)="deleteComparison($event)"
+        ></app-search>
     </div>
     <ngx-charts-line-chart
         [scheme]="'picnic'"

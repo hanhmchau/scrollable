@@ -1,3 +1,4 @@
+import { GraphSeries } from './../models/graph-input';
 import { Component } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { subYears, subWeeks, subMonths } from 'date-fns';
@@ -13,7 +14,7 @@ import { MatSelectChange } from '@angular/material';
 })
 export class GraphComponent {
     private symbol: string;
-    private graphInput: GraphInput;
+    private graphInput: GraphInput = new GraphInput();
     private company: any;
     private loading = false;
     private reloading = false;
@@ -67,6 +68,7 @@ export class GraphComponent {
         }
     ];
     private chosenDuration: any;
+    private comparedTickers: string[] = [];
     constructor(
         private tickerService: TickerService,
         private router: Router,
@@ -76,10 +78,14 @@ export class GraphComponent {
     ngOnInit(): void {
         this.activatedRoute.paramMap.subscribe(paramMap => {
             this.symbol = paramMap.get('symbol');
-            this.chosenDuration = this.durations.find(dur => dur.id === '1y').duration;
+            this.chosenDuration = this.durations.find(
+                dur => dur.id === '1y'
+            ).duration;
+            this.comparedTickers.push(this.symbol);
             this.fetchMetadata();
             this.loading = true;
             this.fetchGraphData(
+                this.symbol,
                 subYears(consts.CURRENT_DAY, 1),
                 consts.CURRENT_DAY
             );
@@ -92,28 +98,37 @@ export class GraphComponent {
         });
     }
 
-    fetchGraphData(startDate: Date, endDate: Date): void {
-        this.reloading = true;
+    fetchGraphData(symbol: string, startDate: Date, endDate: Date): void {
         this.tickerService
-            .getClosePrice(this.symbol, startDate, endDate)
-            .subscribe((result: GraphInput) => {
-                this.loading = false;
-                this.reloading = false;
-                this.graphInput = result;
+            .getClosePrice(symbol, startDate, endDate)
+            .subscribe((result: GraphSeries) => {
+                if (result) {
+                    const graphSeries = this.graphInput.data.filter(
+                        series => series.name !== symbol
+                    );
+                    this.graphInput.data = graphSeries;
+                    graphSeries.push(result);
+                    this.loading = false;
+                    this.reloading = false;
+                }
             });
     }
 
     durationChanged(event: MatSelectChange) {
-        const duration = event.value;
-        if (duration !== -1) {
-            const startDate = this.processStartDate(
+        this.chosenDuration = event.value;
+        let startDate: Date = null;
+        let endDate: Date = null;
+        if (this.chosenDuration !== -1) {
+            startDate = this.processStartDate(
                 consts.CURRENT_DAY,
-                duration
+                this.chosenDuration
             );
-            this.fetchGraphData(startDate, consts.CURRENT_DAY);
-        } else {
-            this.fetchGraphData(undefined, undefined);
+            endDate = consts.CURRENT_DAY;
         }
+        this.reloading = true;
+        this.comparedTickers.forEach(ticker => {
+            this.fetchGraphData(ticker, startDate, endDate);
+        });
     }
 
     processStartDate(endDate: Date, duration: any): Date {
@@ -128,5 +143,24 @@ export class GraphComponent {
             date = subYears(date, duration.year);
         }
         return date;
+    }
+
+    addComparison(ticker: string) {
+        this.comparedTickers.push(ticker);
+        this.fetchGraphData(
+            ticker,
+            this.processStartDate(consts.CURRENT_DAY, this.chosenDuration),
+            consts.CURRENT_DAY
+        );
+    }
+
+    deleteComparison(ticker: string) {
+        const index = this.comparedTickers.findIndex(t => t === ticker);
+        if (index !== -1) {
+            this.comparedTickers.splice(index, 1);
+            this.graphInput.data = this.graphInput.data.filter(
+                series => series.name !== ticker
+            );
+        }
     }
 }
