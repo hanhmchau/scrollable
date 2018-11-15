@@ -77,7 +77,9 @@ export class TickerService {
 
     getFullName(symbol: string): Observable<any> {
         return this.http
-            .get<any>(`/api/${symbol}/full-name`);
+            .get<any>(`/api/${symbol}/full-name`).pipe(
+                catchError(err => of(undefined))
+            );
     }
 
     private queryTickers(search: string): Observable<Ticker[]> {
