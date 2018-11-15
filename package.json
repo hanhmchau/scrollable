@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "nodemon --watch /config/*/** --exec \"webpack-dev-server --mode development --watch\"",
         "dev-server": "nodemon --ignore 'src/**/*.spec.ts' --exec ts-node server.ts",
-        "start": "node server.ts",
+        "start": "ts-node server.ts",
         "build": "webpack --env production",
         "copy": "robocopy dist ..\\server\\dist > output.log",
         "delete": "del -r /F /Q ..\\server\\dist 2>output.log",
