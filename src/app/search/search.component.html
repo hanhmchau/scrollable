@@ -1,13 +1,41 @@
-<form class="example-form">
+<form class="example-form" [ngStyle]="{'width': width}">
     <mat-form-field class="full-width">
-        <input
-            type="text"
-            placeholder="Input a ticker here..."
-            aria-label="Number"
-            matInput
-            [formControl]="myControl"
-            [matAutocomplete]="auto"
-        />
+        <ng-container *ngIf="multiple; else: single">
+            <mat-chip-list #chipList selectable="true">
+                <mat-chip
+                    *ngFor="let ticker of selectedTickers"
+                    [selectable]="selectable"
+                    [removable]="removable"
+                    (removed)="remove(ticker)"
+                >
+                    {{ ticker }}
+                    <mat-icon matChipRemove *ngIf="removable">cancel</mat-icon>
+                </mat-chip>
+                <input
+                    #input
+                    type="text"
+                    [placeholder]="placeholder"
+                    aria-label="Number"
+                    [formControl]="myControl"
+                    [matAutocomplete]="auto"
+                    [matChipInputFor]="chipList"
+                    [matChipInputSeparatorKeyCodes]="separatorKeysCodes"
+                    [matChipInputAddOnBlur]="true"
+                    (matChipInputTokenEnd)="add($event)"
+                />
+            </mat-chip-list>
+        </ng-container>
+        <ng-template #single>
+            <input
+                #input
+                type="text"
+                [placeholder]="placeholder"
+                aria-label="Number"
+                matInput
+                [formControl]="myControl"
+                [matAutocomplete]="auto"
+            />
+        </ng-template>
         <mat-autocomplete
             #auto="matAutocomplete"
             autoActiveFirstOption="true"
