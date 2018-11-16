@@ -24,7 +24,7 @@
     </div>
     <div>
         <app-search
-            width="550px"
+            width="600px"
             placeholder="Compare to: "
             multiple="true"
             [dontShowThis]="[symbol]"
@@ -32,20 +32,30 @@
             (onTickerDeleted)="deleteComparison($event)"
         ></app-search>
     </div>
-    <ngx-charts-line-chart
-        [scheme]="'picnic'"
-        showGridLines="false"
-        [results]="graphInput.data"
-        [gradient]="false"
-        [xAxis]="true"
-        [yAxis]="true"
-        [legend]="graphInput.data.length > 1"
-        [showXAxisLabel]="false"
-        [showYAxisLabel]="false"
-        [autoScale]="true"
-        [timeline]="false"
-    >
-    </ngx-charts-line-chart>
+    <ng-container *ngIf="graphInput.data[0].series.length > 0; else: noData">
+        <ngx-charts-line-chart
+            [scheme]="'picnic'"
+            showGridLines="false"
+            [results]="graphInput.data"
+            [gradient]="false"
+            [xAxis]="true"
+            [yAxis]="true"
+            [legend]="graphInput.data.length > 1"
+            [showXAxisLabel]="false"
+            [showYAxisLabel]="false"
+            [autoScale]="true"
+            [timeline]="false"
+        >
+        </ngx-charts-line-chart>
+    </ng-container>
+    <ng-template #noData>
+        <div class="no-in-duration">
+            <app-not-found
+                message="We have no data for this sticker in this timeframe."
+                [showHomeLink]="false"
+            ></app-not-found>
+        </div>
+    </ng-template>
 </div>
 <ng-template #noResult>
     <ng-container *ngIf="loading; else: elseTemplate">
