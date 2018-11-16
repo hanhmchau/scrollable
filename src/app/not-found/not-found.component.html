@@ -1,4 +1,4 @@
 <div>
     <h4>{{message}}</h4>
-    <a [routerLink]="['/']">Return to home page</a>
+    <a *ngIf="showHomeLink" [routerLink]="['/']">Return to home page</a>
 </div>

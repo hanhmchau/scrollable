@@ -7,4 +7,5 @@ import { Component, Input } from '@angular/core';
 })
 export class NotFoundComponent {
     @Input() message = 'There\'s nothing in this page.';
+    @Input() showHomeLink = true;
 }
