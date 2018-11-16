@@ -65,6 +65,9 @@ export class SearchComponent {
     tickerSelected(event: MatAutocompleteSelectedEvent) {
         const ticker = event.option.value;
         if (this.multiple) {
+            if (this.selectedTickers.length >= 5) {
+                return;
+            }
             this.selectedTickers.push(ticker);
         }
         this.onTickerSelected.emit(ticker);
