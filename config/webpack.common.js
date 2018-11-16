@@ -17,7 +17,8 @@ module.exports = merge([{
         }
     },
     parts.html({
-        template: 'src/index.html'
+        template: 'src/index.html',
+        favicon: 'favicon.ico'
     }),
     parts.provideJquery(),
     parts.typeScript(),
