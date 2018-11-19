@@ -4,9 +4,13 @@ import {
     closePrice,
     createError,
     getTickers,
-    movingDayAverage
+    movingDayAverage,
+    generateHistoricalDataJSON,
+    getHistoricalData,
+    generateHistoricalDataCSV
 } from '../services';
 import { getFullName } from './../services/index';
+import * as path from 'path';
 
 const router = Router();
 
@@ -107,6 +111,35 @@ router.get(
                 message:
                     'Start date parameter is missing. Please check your API syntax and try again'
             });
+        }
+    })
+);
+
+router.get(
+    '/:ticker/download/twap.json',
+    asynchronify(async (req: Request, res: Response) => {
+        const ticker = req.params.ticker;
+        try {
+            const content = await getHistoricalData(ticker);
+            res.json(content);
+            // await generateHistoricalDataJSON(ticker);
+            // res.download(path.join(__dirname, '../files', `${ticker}.json`));
+        } catch (e) {
+            res.status(404).json(createError(e));
+        }
+    })
+);
+
+router.get(
+    '/:ticker/download/twap.csv',
+    asynchronify(async (req: Request, res: Response) => {
+        const ticker = req.params.ticker;
+        try {
+            await generateHistoricalDataCSV(ticker);
+            res.download(path.join(__dirname, '../files', `${ticker}.csv`));
+        } catch (e) {
+            console.log(e);
+            res.status(404).json(createError(e));
         }
     })
 );

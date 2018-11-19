@@ -1,3 +1,5 @@
+import { LMWACalculator } from './../utils/lwma';
+import { SMACalculator } from './../utils/sma';
 import axios from 'axios';
 import {
     addDays,
@@ -5,6 +7,7 @@ import {
     eachDay,
     format,
     isEqual,
+    isToday,
     isWithinRange,
     parse
 } from 'date-fns';
@@ -14,6 +17,7 @@ import * as path from 'path';
 import { promisify } from 'util';
 import consts from '../consts';
 import Error from '../models/error';
+import { parse as json2csv } from 'json2csv';
 const dateFormat = 'YYYY-MM-DD';
 const quandlUrl = 'https://www.quandl.com/api/v3/datasets/WIKI';
 const cache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
@@ -73,8 +77,8 @@ export const createError = (e: any) => {
     } catch (e) {}
 };
 
-const formatDate = (date: Date | string) => {
-    if (typeof date === 'string') {
+const formatDate = (date: Date | string | undefined) => {
+    if (typeof date === 'string' || !date) {
         return date;
     }
     return format(date, dateFormat);
@@ -159,8 +163,9 @@ const cacheResult = (
 
 const getEndOfDays = async (
     ticker: string,
-    startDate: Date | string,
-    endDate: Date | string
+    startDate?: Date | string | undefined,
+    endDate?: Date | string | undefined,
+    specificColumn?: number | undefined
 ) => {
     const cachedResult = extractFromCache(ticker, startDate, endDate);
     if (cachedResult) {
@@ -173,7 +178,7 @@ const getEndOfDays = async (
             end_date: formatDate(endDate),
             order: 'asc',
             api_key: process.env.QUANDL_API,
-            column_index: consts.COLUMN_INDEX.END_OF_DAY
+            column_index: specificColumn
         }
     });
     const dataset = response.data.dataset_data;
@@ -224,7 +229,12 @@ export const closePrice = async (
     startDate: Date | string,
     endDate: Date | string
 ) => {
-    const dataset = await getEndOfDays(ticker, startDate, endDate);
+    const dataset = await getEndOfDays(
+        ticker,
+        startDate,
+        endDate,
+        consts.COLUMN_INDEX.END_OF_DAY
+    );
     return {
         startDate: dataset.start_date,
         endDate: dataset.end_date,
@@ -238,7 +248,12 @@ const getAverage = async (
     days: number
 ) => {
     const endDate = addDays(startDate, days);
-    const result = await getEndOfDays(ticker, startDate, endDate);
+    const result = await getEndOfDays(
+        ticker,
+        startDate,
+        endDate,
+        consts.COLUMN_INDEX.END_OF_DAY
+    );
     const dataset = result.data;
     if (dataset.length) {
         return (
@@ -256,4 +271,106 @@ const firstAvailableDate = async (ticker: string) => {
         }
     });
     return parse(result.data.dataset.oldest_available_date);
+};
+
+export const generateHistoricalDataCSV = async (ticker: string) => {
+    const content = await getHistoricalData(ticker);
+    await new Promise((resolve, reject) => {
+        fs.writeFile(
+            path.join(__dirname, '../files', `${ticker}.csv`),
+            json2csv(content),
+            err => {
+                resolve();
+            }
+        );
+    });
+};
+
+export const generateHistoricalDataJSON = async (ticker: string) => {
+    const content = await getHistoricalData(ticker);
+    const result = {
+        ticker,
+        prices: content
+    };
+    await new Promise((resolve, reject) => {
+        fs.writeFile(
+            path.join(__dirname, '../files', `${ticker}.json`),
+            JSON.stringify(result),
+            err => {
+                resolve();
+            }
+        );
+    });
+};
+
+export const getHistoricalData = async (ticker: string) => {
+    const cacheKey = `${ticker}-historical`;
+    const cachedHistoricalData: any = cache.get(cacheKey);
+    if (cachedHistoricalData && isToday(cachedHistoricalData.fetchedDay)) {
+        return cachedHistoricalData.data;
+    }
+    let twapValues;
+    if (!cachedHistoricalData) {
+        const dataset = await getEndOfDays(ticker);
+        const data: any[][] = dataset.data;
+        twapValues = calculateTwapValues(data);
+    } else {
+        const dataset = await getEndOfDays(
+            ticker,
+            addDays(cachedHistoricalData.fetchedDay, 1)
+        );
+        const data: any[][] = [...cachedHistoricalData.data, ...dataset.data];
+        twapValues = calculateTwapValues(data);
+    }
+    cache.set(cacheKey, {
+        fetchedDay: new Date(),
+        data: twapValues
+    });
+    return twapValues;
+};
+
+const calculateTwapValues = async (data: any[]) => {
+    const content: any[] = [];
+    let twapOpen = 0;
+    let twapHigh = 0;
+    let twapLow = 0;
+    let twapClose = 0;
+    const sma50: SMACalculator = new SMACalculator(50);
+    const sma200: SMACalculator = new SMACalculator(200);
+    const lwma15: LMWACalculator = new LMWACalculator(15);
+    const lwma50: LMWACalculator = new LMWACalculator(50);
+    data.forEach((day, index) => {
+        const date = day[0];
+        const open = day[1];
+        const high = day[2];
+        const low = day[3];
+        const close = day[4];
+        const volume = day[5];
+        const todayTwapOpen = (twapOpen += open) / (index + 1);
+        const todayTwapHigh = (twapHigh += high) / (index + 1);
+        const todayTwapLow = (twapLow += low) / (index + 1);
+        const todayTwapClose = (twapClose += close) / (index + 1);
+        sma50.push(close);
+        sma200.push(close);
+        lwma15.push(close);
+        lwma50.push(close);
+        const obj = {
+            date,
+            open,
+            high,
+            low,
+            close,
+            volume,
+            twapOpen: +todayTwapOpen.toFixed(2), // round to two decimal places, + to convert to number
+            twapHigh: +todayTwapHigh.toFixed(2),
+            twapLow: +todayTwapLow.toFixed(2),
+            twapClose: +todayTwapClose.toFixed(2),
+            sma50: sma50.getSimpleMovingAvg(),
+            sma200: sma200.getSimpleMovingAvg(),
+            lwma15: lwma15.getSimpleMovingAvg(),
+            lwma50: lwma50.getSimpleMovingAvg()
+        };
+        content.push(obj);
+    });
+    return content;
 };
