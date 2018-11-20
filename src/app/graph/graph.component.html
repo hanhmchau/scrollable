@@ -6,36 +6,48 @@
     <div class="card" *ngIf="company">
         <span class="mat-headline">{{ company.company }}</span>
         <span class="subtitle mat-small">{{ symbol }}</span>
-        <div class="duration">
-            <mat-spinner diameter="18" *ngIf="reloading"></mat-spinner>
-            <mat-form-field class="duration-select">
-                <mat-select
-                    [(ngModel)]="chosenDuration"
-                    (selectionChange)="durationChanged($event)"
+        <div class="inline-block">
+            <button mat-icon-button [matMenuTriggerFor]="menu">
+                <mat-icon>get_app</mat-icon>
+            </button>
+            <mat-menu #menu="matMenu">
+                <a class="flat-link" mat-flat-button href="/api/{{symbol}}/download/twap.json"
+                    >JSON</a
                 >
-                    <mat-option
-                        *ngFor="let duration of durations"
-                        [value]="duration.duration"
-                        >{{ duration.label }}</mat-option
-                    >
-                </mat-select>
-            </mat-form-field>
+                <a class="flat-link" mat-flat-button href="/api/{{symbol}}/download/twap.csv"
+                    >CSV</a
+                >
+            </mat-menu>
+        </div>
+        <div class="float-right">
+            <app-search
+                width="400px"
+                placeholder="Compare to: "
+                multiple="true"
+                [dontShowThis]="[symbol]"
+                (onTickerSelected)="addComparison($event)"
+                (onTickerDeleted)="deleteComparison($event)"
+            ></app-search>
         </div>
     </div>
-    <div>
-        <app-search
-            width="600px"
-            placeholder="Compare to: "
-            multiple="true"
-            [dontShowThis]="[symbol]"
-            (onTickerSelected)="addComparison($event)"
-            (onTickerDeleted)="deleteComparison($event)"
-        ></app-search>
+    <div></div>
+    <div class="duration-toggle-box">
+        <mat-button-toggle-group
+            name="chosen-duration"
+            (change)="durationChanged($event)"
+            [value]="chosenDuration"
+        >
+            <mat-button-toggle
+                *ngFor="let duration of durations"
+                [value]="duration.duration"
+                >{{ duration.label }}</mat-button-toggle
+            >
+        </mat-button-toggle-group>
     </div>
     <ng-container *ngIf="graphInput.data[0].series.length > 0; else: noData">
         <ngx-charts-line-chart
             [scheme]="'picnic'"
-            showGridLines="false"
+            [showGridLines]="false"
             [results]="graphInput.data"
             [gradient]="false"
             [xAxis]="true"
