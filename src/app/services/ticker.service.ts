@@ -14,11 +14,11 @@ export class TickerService {
     constructor(private http: HttpClient) {}
 
     getClosePrice(
-        symbol: string,
+        symbols: string,
         startDate: Date,
         endDate: Date
-    ): Observable<GraphSeries> {
-        let params = new HttpParams();
+    ): Observable<GraphInput> {
+        let params = new HttpParams().set('symbols', symbols);
         if (startDate) {
             params = params.set(
                 'startDate',
@@ -29,24 +29,29 @@ export class TickerService {
             params = params.set('endDate', format(endDate, consts.DATE_FORMAT));
         }
         return this.http
-            .get<Ticker[]>(`/api/${symbol}/close-price`, {
+            .get<Ticker[]>(`/api/close-price`, {
                 params
             })
             .pipe(
                 catchError(err => of(undefined)),
                 map((data: any) => {
                     if (data) {
-                        const dataset: any[][] = data.prices.dateClose.data;
-                        const graphSeries = new GraphSeries();
-                        graphSeries.name = symbol;
-                        dataset.forEach(el => {
-                            graphSeries.series.push({
-                                label: symbol,
-                                name: parse(el[0] as string),
-                                value: el[1] as number
+                        const graphInput = new GraphInput();
+                        const dataset: any[] = data.prices.dateClose;
+                        dataset.forEach(d => {
+                            const graphSeries = new GraphSeries();
+                            graphSeries.name = d.ticker;
+                            d.data.forEach((el: any[]) => {
+                                graphSeries.series.push({
+                                    label: d.ticker,
+                                    name: parse(el[0] as string),
+                                    value: el[1] as number
+                                });
                             });
+                            graphInput.data.push(graphSeries);
                         });
-                        return graphSeries;
+
+                        return graphInput;
                     }
                 })
             );

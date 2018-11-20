@@ -6,6 +6,7 @@ import consts from '../../consts';
 import GraphInput from '../models/graph-input';
 import { TickerService } from './../services/ticker.service';
 import { MatSelectChange } from '@angular/material';
+import { Observable } from 'rxjs';
 
 @Component({
     selector: 'app-graph-container',
@@ -84,11 +85,12 @@ export class GraphComponent {
             this.comparedTickers.push(this.symbol);
             this.fetchMetadata();
             this.loading = true;
-            this.fetchGraphData(
-                this.symbol,
-                subYears(consts.CURRENT_DAY, 1),
-                consts.CURRENT_DAY
-            );
+            this.fetchGraphData(this.comparedTickers).subscribe(result => {
+                if (result) {
+                    this.graphInput = result;
+                    this.loading = false;
+                }
+            });
         });
     }
 
@@ -98,41 +100,34 @@ export class GraphComponent {
         });
     }
 
-    fetchGraphData(symbol: string, startDate: Date, endDate: Date): void {
-        this.tickerService
-            .getClosePrice(symbol, startDate, endDate)
-            .subscribe((result: GraphSeries) => {
-                if (result) {
-                    const graphSeries = this.graphInput.data.filter(
-                        series => series.name !== symbol
-                    );
-                    this.graphInput.data = graphSeries;
-                    graphSeries.push(result);
-                    this.loading = false;
-                    this.reloading = false;
-                }
-            });
+    fetchGraphData(symbols: string[]): Observable<GraphInput> {
+        const range = this.processRange(this.chosenDuration);
+        const startDate: Date = range.start as Date;
+        const endDate: Date = range.end as Date;
+        const symbol = symbols.join(',');
+        return this.tickerService.getClosePrice(symbol, startDate, endDate);
     }
 
     durationChanged(event: MatSelectChange) {
         this.chosenDuration = event.value;
-        let startDate: Date = null;
-        let endDate: Date = null;
-        if (this.chosenDuration !== -1) {
-            startDate = this.processStartDate(
-                consts.CURRENT_DAY,
-                this.chosenDuration
-            );
-            endDate = consts.CURRENT_DAY;
-        }
         this.reloading = true;
-        this.comparedTickers.forEach(ticker => {
-            this.fetchGraphData(ticker, startDate, endDate);
+        this.fetchGraphData(this.comparedTickers).subscribe(result => {
+            if (result) {
+                this.graphInput = result;
+                this.loading = false;
+                this.reloading = false;
+            }
         });
     }
 
-    processStartDate(endDate: Date, duration: any): Date {
-        let date = endDate;
+    processRange(duration: any): any {
+        if (duration === -1) {
+            return {
+                start: null,
+                end: null
+            };
+        }
+        let date = consts.CURRENT_DAY;
         if (duration.week) {
             date = subWeeks(date, duration.week);
         }
@@ -142,16 +137,23 @@ export class GraphComponent {
         if (duration.year) {
             date = subYears(date, duration.year);
         }
-        return date;
+        return {
+            start: date,
+            end: consts.CURRENT_DAY
+        };
     }
 
     addComparison(ticker: string) {
         this.comparedTickers.push(ticker);
-        this.fetchGraphData(
-            ticker,
-            this.processStartDate(consts.CURRENT_DAY, this.chosenDuration),
-            consts.CURRENT_DAY
-        );
+        this.fetchGraphData([ticker]).subscribe(result => {
+            if (result) {
+                this.graphInput.data = [
+                    ...this.graphInput.data,
+                    result.data[0]
+                ];
+                this.loading = false;
+            }
+        });
     }
 
     deleteComparison(ticker: string) {
