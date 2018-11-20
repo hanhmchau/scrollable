@@ -1,4 +1,4 @@
-@import "~@angular/material/prebuilt-themes/indigo-pink.css";
+@import '~@angular/material/prebuilt-themes/indigo-pink.css';
 
 body {
     margin: 0;
@@ -120,11 +120,19 @@ body {
 }
 
 .ng-select {
-    border:0px;
+    border: 0px;
     min-height: 0px;
     border-radius: 0;
 }
-.ng-select .ng-select-container  {            
+.ng-select .ng-select-container {
     min-height: 0px;
     border-radius: 0;
+}
+
+.mat-chip-list-wrapper {
+    flex-wrap: nowrap !important;
+}
+
+.mat-standard-chip.mat-chip-with-trailing-icon {
+    flex: 0 0 auto;
 }
