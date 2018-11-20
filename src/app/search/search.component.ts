@@ -36,6 +36,7 @@ export class SearchComponent {
     separatorKeysCodes: number[] = [ENTER, COMMA];
     removable = true;
     selectable = true;
+    @Input() maxChips = 4;
     @Input() width = '500px';
     @Input() placeholder = 'Input a ticker here...';
     @Input() multiple = false;
@@ -65,7 +66,7 @@ export class SearchComponent {
     tickerSelected(event: MatAutocompleteSelectedEvent) {
         const ticker = event.option.value;
         if (this.multiple) {
-            if (this.selectedTickers.length >= 5) {
+            if (this.selectedTickers.length >= this.maxChips) {
                 return;
             }
             this.selectedTickers.push(ticker);
