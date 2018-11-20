@@ -36,6 +36,7 @@ export class SearchComponent {
     separatorKeysCodes: number[] = [ENTER, COMMA];
     removable = true;
     selectable = true;
+    @Input() value = '';
     @Input() maxChips = 4;
     @Input() width = '500px';
     @Input() placeholder = 'Input a ticker here...';
@@ -43,12 +44,16 @@ export class SearchComponent {
     @Input() dontShowThis: string[] = [];
     @Output() onTickerSelected = new EventEmitter<string>();
     @Output() onTickerDeleted = new EventEmitter<string>();
+    @Output() onValueChanged = new EventEmitter<string>();
     @ViewChild('auto') matAutocomplete: MatAutocomplete;
     @ViewChild('input') input: ElementRef<HTMLInputElement>;
 
     constructor(private tickerService: TickerService, private router: Router) {}
 
     ngOnInit() {
+        this.myControl.valueChanges.subscribe(val => {
+            this.onValueChanged.emit(val);
+        });
         this.filteredOptions = this.myControl.valueChanges.pipe(
             debounceTime(150),
             distinctUntilChanged(),

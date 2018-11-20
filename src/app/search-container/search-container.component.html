@@ -1,4 +1,4 @@
 <div class="container">
-    <app-search (onTickerSelected)="navigateToTickerPage($event)"></app-search>
-    <button mat-raised-button color="light">View</button>
+    <app-search (onValueChanged)="valueChange($event)" (onTickerSelected)="navigateToTickerPage($event)"></app-search>
+    <button (click)="navigateToTickerPage(search)" mat-raised-button color="light">View</button>
 </div>

@@ -7,9 +7,16 @@ import { Router } from '@angular/router';
     styleUrls: ['./search-container.component.css']
 })
 export class SearchContainerComponent {
+    search: string = '';
     constructor(private router: Router) {}
 
     navigateToTickerPage(ticker: string) {
-        this.router.navigate([`/ticker/${ticker}`]);
+        if (ticker) {
+            this.router.navigate([`/ticker/${ticker}`]);
+        }
+    }
+
+    valueChange(ticker: string) {
+        this.search = ticker;
     }
 }
