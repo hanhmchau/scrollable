@@ -50,12 +50,12 @@ router.get(
 );
 
 router.get(
-    '/:ticker/close-price',
+    '/close-price',
     asynchronify(async (req: Request, res: Response) => {
-        const { startDate = '', endDate = '' } = { ...req.query };
+        const { startDate = '', endDate = '', symbols = '' } = { ...req.query };
         const ticker = req.params.ticker;
         try {
-            const data = await closePrice(ticker, startDate, endDate);
+            const data = await closePrice(symbols, startDate, endDate);
             res.json({
                 prices: {
                     ticker,

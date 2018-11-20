@@ -225,21 +225,27 @@ export const movingDayAverage = async (
 };
 
 export const closePrice = async (
-    ticker: string,
+    tickerStr: string,
     startDate: Date | string,
     endDate: Date | string
 ) => {
-    const dataset = await getEndOfDays(
-        ticker,
-        startDate,
-        endDate,
-        consts.COLUMN_INDEX.END_OF_DAY
-    );
-    return {
-        startDate: dataset.start_date,
-        endDate: dataset.end_date,
-        data: dataset.data
-    };
+    const tickers = tickerStr.split(',');
+    const data = [];
+    for (const ticker of tickers) {
+        const dataset = await getEndOfDays(
+            ticker,
+            startDate,
+            endDate,
+            consts.COLUMN_INDEX.END_OF_DAY
+        );
+        data.push({
+            ticker,
+            startDate: dataset.start_date,
+            endDate: dataset.end_date,
+            data: dataset.data
+        });
+    }
+    return data;
 };
 
 const getAverage = async (
