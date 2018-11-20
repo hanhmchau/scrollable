@@ -120,10 +120,8 @@ router.get(
     asynchronify(async (req: Request, res: Response) => {
         const ticker = req.params.ticker;
         try {
-            const content = await getHistoricalData(ticker);
-            res.json(content);
-            // await generateHistoricalDataJSON(ticker);
-            // res.download(path.join(__dirname, '../files', `${ticker}.json`));
+            await generateHistoricalDataJSON(ticker);
+            res.download(path.join(__dirname, '../files', `${ticker}.json`));
         } catch (e) {
             res.status(404).json(createError(e));
         }
