@@ -88,8 +88,8 @@ export class GraphComponent {
             this.fetchGraphData(this.comparedTickers).subscribe(result => {
                 if (result) {
                     this.graphInput = result;
-                    this.loading = false;
                 }
+                this.loading = false;
             });
         });
     }
@@ -114,9 +114,9 @@ export class GraphComponent {
         this.fetchGraphData(this.comparedTickers).subscribe(result => {
             if (result) {
                 this.graphInput = result;
-                this.loading = false;
-                this.reloading = false;
             }
+            this.loading = false;
+            this.reloading = false;
         });
     }
 
