@@ -1,5 +1,3 @@
-import { LMWACalculator } from './../utils/lwma';
-import { SMACalculator } from './../utils/sma';
 import axios from 'axios';
 import {
     addDays,
@@ -12,12 +10,14 @@ import {
     parse
 } from 'date-fns';
 import * as fs from 'fs';
+import { parse as json2csv } from 'json2csv';
 import * as NodeCache from 'node-cache';
 import * as path from 'path';
 import { promisify } from 'util';
 import consts from '../consts';
 import Error from '../models/error';
-import { parse as json2csv } from 'json2csv';
+import { LMWACalculator } from './../utils/lwma';
+import { SMACalculator } from './../utils/sma';
 const dateFormat = 'YYYY-MM-DD';
 const quandlUrl = 'https://www.quandl.com/api/v3/datasets/WIKI';
 const cache = new NodeCache({ stdTTL: 100, checkperiod: 120 });
@@ -279,17 +279,25 @@ const firstAvailableDate = async (ticker: string) => {
     return parse(result.data.dataset.oldest_available_date);
 };
 
-export const generateHistoricalDataCSV = async (ticker: string) => {
-    const content = await getHistoricalData(ticker);
-    await new Promise((resolve, reject) => {
-        fs.writeFile(
-            path.join(__dirname, '../files', `${ticker}.csv`),
-            json2csv(content),
-            err => {
-                resolve();
-            }
-        );
-    });
+export const generateHistoricalData = async (
+    ticker: string,
+    fileFormat: string
+) => {
+    const data = await getHistoricalData(ticker);
+    let content;
+    const fileName = `${ticker}.${fileFormat.toLowerCase()}`;
+    switch (fileFormat.toLowerCase()) {
+        case 'json':
+            content = JSON.stringify(data);
+            break;
+        case 'csv':
+            content = json2csv(data);
+            break;
+    }
+    return {
+        content,
+        fileName
+    };
 };
 
 export const generateHistoricalDataJSON = async (ticker: string) => {

@@ -1,16 +1,14 @@
 import { Request, Response, Router } from 'express';
+import * as stream from 'stream';
 import asynchronify from '../middlewares/async';
 import {
     closePrice,
     createError,
+    generateHistoricalData,
     getTickers,
-    movingDayAverage,
-    generateHistoricalDataJSON,
-    getHistoricalData,
-    generateHistoricalDataCSV
+    movingDayAverage
 } from '../services';
 import { getFullName } from './../services/index';
-import * as path from 'path';
 
 const router = Router();
 
@@ -116,27 +114,32 @@ router.get(
 );
 
 router.get(
-    '/:ticker/download/twap.json',
+    '/:ticker/download/twap.(json|csv)',
     asynchronify(async (req: Request, res: Response) => {
-        const ticker = req.params.ticker;
+        const { ticker = '' } = { ...req.params };
+        const url = req.originalUrl;
+        const format = url.slice(url.indexOf('.') + 1);
         try {
-            await generateHistoricalDataJSON(ticker);
-            res.download(path.join(__dirname, '../files', `${ticker}.json`));
+            const { content, fileName } = await generateHistoricalData(
+                ticker,
+                format
+            );
+            if (content) {
+                const fileContent = Buffer.from(content);
+                const readStream = new stream.PassThrough();
+                readStream.end(fileContent);
+                res.set(
+                    'Content-disposition',
+                    'attachment; filename=' + fileName
+                ).set('Content-Type', 'text/plain');
+                readStream.pipe(res);
+            } else {
+                res.status(404).json({
+                    message:
+                        'Your data format is not supported. Please try again.'
+                });
+            }
         } catch (e) {
-            res.status(404).json(createError(e));
-        }
-    })
-);
-
-router.get(
-    '/:ticker/download/twap.csv',
-    asynchronify(async (req: Request, res: Response) => {
-        const ticker = req.params.ticker;
-        try {
-            await generateHistoricalDataCSV(ticker);
-            res.download(path.join(__dirname, '../files', `${ticker}.csv`));
-        } catch (e) {
-            console.log(e);
             res.status(404).json(createError(e));
         }
     })
