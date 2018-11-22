@@ -1,29 +1,34 @@
 import { Request, Response, Router } from 'express';
 import * as stream from 'stream';
 import asynchronify from '../middlewares/async';
-import {
-    closePrice,
-    createError,
-    generateAlertData,
-    generateHistoricalData,
-    getTickers,
-    movingDayAverage
-} from '../services';
-import { getFullName } from './../services/index';
+import Error from '../models/error';
+import { EndOfDayService, TickerService, ReportService } from '../services';
 
 const router = Router();
+
+const createError = (e: any) => {
+    try {
+        const data = e.response.data;
+        const message = data.quandl_error
+            ? data.quandl_error.message
+            : undefined;
+        delete data.quandl_error;
+        return new Error(message, data.errors);
+    } catch (e) {}
+};
 
 router.get(
     '/tickers',
     asynchronify(async (req: Request, res: Response) => {
         const { top = 0, search = '' } = { ...req.query };
+        const tickerService = new TickerService();
         if (isNaN(parseInt(top, 10))) {
             res.status(400).json({
                 error: `You provided ${top} for the number of returned results. This is not a valid number.`
             });
             return;
         }
-        const tickers = await getTickers(search, top);
+        const tickers = await tickerService.getTickers(search, top);
         res.json(tickers);
     })
 );
@@ -33,7 +38,8 @@ router.get(
     asynchronify(async (req: Request, res: Response) => {
         const ticker = req.params.ticker;
         try {
-            const name = await getFullName(ticker);
+            const tickerService = new TickerService();
+            const name = await tickerService.getTicker(ticker);
             if (name) {
                 res.json(name);
             } else {
@@ -49,12 +55,42 @@ router.get(
 );
 
 router.get(
+    '/:ticker/close-price',
+    asynchronify(async (req: Request, res: Response) => {
+        const { startDate = '', endDate = '' } = { ...req.query };
+        const ticker = req.params.ticker;
+        try {
+            const eodService = new EndOfDayService();
+            const data = await eodService.getClosePrice(
+                ticker,
+                startDate,
+                endDate
+            );
+            res.json({
+                prices: {
+                    ticker,
+                    dateClose: data
+                }
+            });
+        } catch (e) {
+            res.status(404).json(createError(e));
+        }
+    })
+);
+
+router.get(
     '/close-price',
     asynchronify(async (req: Request, res: Response) => {
         const { startDate = '', endDate = '', symbols = '' } = { ...req.query };
         const ticker = req.params.ticker;
+        const tickers: string[] = symbols.split(',');
         try {
-            const data = await closePrice(symbols, startDate, endDate);
+            const eodService = new EndOfDayService();
+            const data = await eodService.getClosePrices(
+                tickers,
+                startDate,
+                endDate
+            );
             res.json({
                 prices: {
                     ticker,
@@ -73,8 +109,17 @@ router.get(
         // tslint:disable-next-line:no-unnecessary-initializer
         const { startDate = '', days = 200 } = { ...req.query };
         const ticker = req.params.ticker;
-        const result = await movingDayAverage(ticker, startDate, days);
-        res.status(result.succeeded ? 200 : 404).json(result.data);
+        const eodService = new EndOfDayService();
+        const result = await eodService.getMovingDayAverage(
+            ticker,
+            startDate,
+            days
+        );
+        if (result.succeeded) {
+            res.json(result);
+        } else {
+            res.status(404).json(result);
+        }
     })
 );
 
@@ -85,22 +130,25 @@ router.get(
         const { startDate = '', days = 200 } = { ...req.query };
         const tickerString = req.query.ticker;
         const tickers: string[] = tickerString.split(',');
+        const eodService = new EndOfDayService();
         if (startDate) {
-            const results = {};
+            const results: any = {};
             Promise.all(
-                tickers.map(ticker => movingDayAverage(ticker, startDate, days))
+                tickers.map(ticker =>
+                    eodService.getMovingDayAverage(ticker, startDate, days)
+                )
             ).then(tickerResults => {
                 tickerResults.forEach((result, index) => {
                     if (result.succeeded) {
-                        const res = {
+                        const rez: any = {
                             average: (result.data as any)['200dma'].average
                         };
-                        (results as any)[tickers[index]] = {
+                        results[tickers[index]] = {
                             succeeded: true,
-                            data: res
+                            data: rez
                         };
                     } else {
-                        (results as any)[tickers[index]] = result;
+                        results[tickers[index]] = result;
                     }
                 });
                 res.json(results);
@@ -121,7 +169,9 @@ router.get(
         const url = req.originalUrl;
         const format = url.slice(url.indexOf('.') + 1);
         try {
-            const { content, fileName } = await generateHistoricalData(
+            const reportService = new ReportService();
+            const fileName = `${ticker}.${format}`;
+            const { content } = await reportService.getHistoricalData(
                 ticker,
                 format
             );
@@ -152,7 +202,9 @@ router.get(
         const { ticker = '' } = { ...req.params };
         const fileName = 'alerts.dat';
         try {
-            const content = await generateAlertData(ticker);
+            const reportService = new ReportService();
+            const content = await reportService.getAlertData(ticker);
+            console.log(content.length);
             const fileContent = Buffer.from(content);
             const readStream = new stream.PassThrough();
             readStream.end(fileContent);
