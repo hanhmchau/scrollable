@@ -65,3 +65,7 @@
 .flat-link {
     display: block;
 }
+
+.mat-button, .mat-flat-button, .mat-icon-button, .mat-stroked-button {
+    text-align: left !important;
+}

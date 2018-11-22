@@ -11,11 +11,27 @@
                 <mat-icon>get_app</mat-icon>
             </button>
             <mat-menu #menu="matMenu">
-                <a class="flat-link" mat-flat-button href="/api/{{symbol}}/download/twap.json"
-                    >JSON</a
-                >
-                <a class="flat-link" mat-flat-button href="/api/{{symbol}}/download/twap.csv"
-                    >CSV</a
+                <button mat-menu-item [matMenuTriggerFor]="historical">Data</button>
+                <mat-menu #historical="matMenu">
+                    <a
+                        class="flat-link"
+                        mat-button
+                        href="/api/{{symbol}}/download/twap.json"
+                        >JSON</a
+                    >
+                    <a
+                        class="flat-link"
+                        mat-button
+                        href="/api/{{symbol}}/download/twap.csv"
+                        >CSV</a
+                    >
+                </mat-menu>
+
+                <a
+                    class="flat-link"
+                    mat-button
+                    href="/api/{{symbol}}/download/alerts.dat"
+                    >Alerts</a
                 >
             </mat-menu>
         </div>
