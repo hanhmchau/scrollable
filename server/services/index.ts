@@ -300,24 +300,7 @@ export const generateHistoricalData = async (
     };
 };
 
-export const generateHistoricalDataJSON = async (ticker: string) => {
-    const content = await getHistoricalData(ticker);
-    const result = {
-        ticker,
-        prices: content
-    };
-    await new Promise((resolve, reject) => {
-        fs.writeFile(
-            path.join(__dirname, '../files', `${ticker}.json`),
-            JSON.stringify(result),
-            err => {
-                resolve();
-            }
-        );
-    });
-};
-
-export const getHistoricalData = async (ticker: string) => {
+const getHistoricalData = async (ticker: string) => {
     const cacheKey = `${ticker}-historical`;
     const cachedHistoricalData: any = cache.get(cacheKey);
     if (cachedHistoricalData && isToday(cachedHistoricalData.fetchedDay)) {
@@ -385,6 +368,101 @@ const calculateTwapValues = async (data: any[]) => {
             lwma50: lwma50.getSimpleMovingAvg()
         };
         content.push(obj);
+    });
+    return content;
+};
+
+const linifyObject = ({
+    status,
+    date,
+    ticker,
+    open,
+    high,
+    low,
+    close,
+    volume,
+    sma50,
+    sma200
+}: any): string => {
+    return `${status},${ticker},${date},${open},${high},${low},${close},${volume},${sma50},${sma200}`;
+};
+
+export const generateAlertData = async (ticker: string) => {
+    const data = await getAlertData(ticker);
+    return data.map(obj => linifyObject(obj)).join('\n');
+};
+
+const getAlertData = async (ticker: string): Promise<any[]> => {
+    const cacheKey = `${ticker}-alert`;
+    const cachedData: any = cache.get(cacheKey);
+    if (cachedData && isToday(cachedData.fetchedDay)) {
+        return cachedData.data;
+    }
+    let twapValues;
+    if (!cachedData) {
+        const dataset = await getEndOfDays(ticker);
+        const data: any[][] = dataset.data;
+        twapValues = calculateAlertData(data, ticker);
+    } else {
+        const dataset = await getEndOfDays(
+            ticker,
+            addDays(cachedData.fetchedDay, 1)
+        );
+        const data: any[][] = [...cachedData.data, ...dataset.data];
+        twapValues = calculateAlertData(data, ticker);
+    }
+    cache.set(cacheKey, {
+        fetchedDay: new Date(),
+        data: twapValues
+    });
+    return twapValues;
+};
+
+const calculateAlertData = async (
+    data: any[],
+    ticker: string
+): Promise<any[]> => {
+    const content: any[] = [];
+    const sma50: SMACalculator = new SMACalculator(50);
+    const smva50: SMACalculator = new SMACalculator(50);
+    const sma200: SMACalculator = new SMACalculator(200);
+    data.forEach((day, index) => {
+        const date = day[0];
+        const open = day[1];
+        const high = day[2];
+        const low = day[3];
+        const close = day[4];
+        const volume = day[5];
+        sma50.push(close);
+        sma200.push(close);
+        smva50.push(volume);
+        const sma50avg = sma50.getSimpleMovingAvg();
+        const sma200avg = sma200.getSimpleMovingAvg();
+        const smva50avg = smva50.getSimpleMovingAvg();
+        const obj = {
+            date,
+            ticker,
+            open,
+            high,
+            low,
+            close,
+            volume,
+            sma50: sma50.getSimpleMovingAvg(),
+            sma200: sma200.getSimpleMovingAvg()
+        };
+        if (sma50avg < sma200avg) {
+            content.push({
+                ...obj,
+                status: 'bearish'
+            });
+        } else {
+            if (volume >= smva50avg * 1.1) {
+                content.push({
+                    ...obj,
+                    status: 'bullish'
+                });
+            }
+        }
     });
     return content;
 };

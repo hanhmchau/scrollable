@@ -4,6 +4,7 @@ import asynchronify from '../middlewares/async';
 import {
     closePrice,
     createError,
+    generateAlertData,
     generateHistoricalData,
     getTickers,
     movingDayAverage
@@ -139,6 +140,27 @@ router.get(
                         'Your data format is not supported. Please try again.'
                 });
             }
+        } catch (e) {
+            res.status(404).json(createError(e));
+        }
+    })
+);
+
+router.get(
+    '/:ticker/download/alerts.dat',
+    asynchronify(async (req: Request, res: Response) => {
+        const { ticker = '' } = { ...req.params };
+        const fileName = 'alerts.dat';
+        try {
+            const content = await generateAlertData(ticker);
+            const fileContent = Buffer.from(content);
+            const readStream = new stream.PassThrough();
+            readStream.end(fileContent);
+            res.set(
+                'Content-disposition',
+                'attachment; filename=' + fileName
+            ).set('Content-Type', 'text/plain');
+            readStream.pipe(res);
         } catch (e) {
             res.status(404).json(createError(e));
         }
