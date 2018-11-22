@@ -5,3 +5,5 @@
 \.env
 
 server/files/
+
+doc/
