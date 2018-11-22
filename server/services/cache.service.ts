@@ -7,7 +7,7 @@ import {
 } from 'date-fns';
 import * as NodeCache from 'node-cache';
 
-class CacheService {
+export class CacheService {
     private cache: NodeCache;
     private dateFormat = 'YYYY-MM-DD';
 
