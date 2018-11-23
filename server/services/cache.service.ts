@@ -15,12 +15,19 @@ export class CacheService {
         this.cache = new NodeCache({ stdTTL: 1000, checkperiod: 1200 });
     }
 
+    getKey(ticker: string, specificColumn: number = -1) {
+        return `${ticker}-${specificColumn}`;
+    }
+
     extractFromCache = (
         ticker: string,
         startDate: Date | string,
-        endDate: Date | string
+        endDate: Date | string,
+        specificColumn: number = -1
     ) => {
-        const cachedResult: any = this.cache.get(ticker);
+        const cachedResult: any = this.cache.get(
+            this.getKey(ticker, specificColumn)
+        );
         let start = format(startDate, this.dateFormat);
         let end = format(endDate, this.dateFormat);
         if (cachedResult) {
@@ -55,15 +62,18 @@ export class CacheService {
                 };
             }
         }
-    }
+    };
 
     cacheResult = (
         ticker: string,
         startDate: Date | string,
         endDate: Date | string,
+        specificColumn: number = -1,
         dataset: any
     ) => {
-        const cachedResult: any = this.cache.get(ticker);
+        const cachedResult: any = this.cache.get(
+            this.getKey(ticker, specificColumn)
+        );
         const newCacheResult: any = cachedResult || {};
         const bounds = newCacheResult.bounds || {};
         const dates = newCacheResult.dates || {};
@@ -91,8 +101,8 @@ export class CacheService {
         );
         newCacheResult.dates = dates;
         newCacheResult.bounds = bounds;
-        this.cache.set(ticker, newCacheResult);
-    }
+        this.cache.set(this.getKey(ticker, specificColumn), newCacheResult);
+    };
 }
 
 export const cache = new CacheService();
