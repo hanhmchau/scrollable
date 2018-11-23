@@ -4,22 +4,12 @@ import { isToday, addDays } from 'date-fns';
 import { LMWACalculator } from './../utils/lwma';
 import { SMACalculator } from './../utils/sma';
 import * as NodeCache from 'node-cache';
+import { cache } from './cache.service';
 
 export class ReportService {
-    private static reportService: ReportService;
-    // tslint:disable-next-line:member-ordering
-    static getReportService() {
-        if (!this.reportService) {
-            this.reportService = new ReportService();
-        }
-        return this.reportService;
-    }
-
-    private cache: NodeCache;
     private eodService: EndOfDayService;
 
-    private constructor() {
-        this.cache = new NodeCache({ stdTTL: 1000, checkperiod: 1200 });
+    constructor() {
         this.eodService = new EndOfDayService();
     }
 
@@ -56,8 +46,7 @@ export class ReportService {
     };
 
     private generateHistoricalData = async (ticker: string) => {
-        const cacheKey = `${ticker}-historical`;
-        const cachedHistoricalData: any = this.cache.get(cacheKey);
+        const cachedHistoricalData = cache.getHistoricalData(ticker);
         if (cachedHistoricalData && isToday(cachedHistoricalData.fetchedDay)) {
             return cachedHistoricalData.data;
         }
@@ -77,16 +66,12 @@ export class ReportService {
             ];
             twapValues = this.calculateTwapValues(data);
         }
-        this.cache.set(cacheKey, {
-            fetchedDay: new Date(),
-            data: twapValues
-        });
+        cache.cacheHistoricalData(ticker, twapValues);
         return twapValues;
     };
 
     private generateAlertData = async (ticker: string): Promise<any[]> => {
-        const cacheKey = `${ticker}-alert`;
-        const cachedData: any = this.cache.get(cacheKey);
+        const cachedData = cache.getHistoricalData(ticker);
         if (cachedData && isToday(cachedData.fetchedDay)) {
             return cachedData.data;
         }
@@ -103,10 +88,7 @@ export class ReportService {
             const data: any[][] = [...cachedData.data, ...dataset.data];
             twapValues = this.calculateAlertData(data, ticker);
         }
-        this.cache.set(cacheKey, {
-            fetchedDay: new Date(),
-            data: twapValues
-        });
+        cache.cacheHistoricalData(ticker, twapValues);
         return twapValues;
     };
 

@@ -3,7 +3,8 @@ import {
     eachDay,
     format,
     isEqual,
-    isWithinRange
+    isWithinRange,
+    isToday
 } from 'date-fns';
 import * as NodeCache from 'node-cache';
 
@@ -15,11 +16,7 @@ export class CacheService {
         this.cache = new NodeCache({ stdTTL: 1000, checkperiod: 1200 });
     }
 
-    getKey(ticker: string, specificColumn: number = -1) {
-        return `${ticker}-${specificColumn}`;
-    }
-
-    extractFromCache = (
+    getDailyStats = (
         ticker: string,
         startDate: Date | string,
         endDate: Date | string,
@@ -64,7 +61,7 @@ export class CacheService {
         }
     };
 
-    cacheResult = (
+    cacheDailyStats = (
         ticker: string,
         startDate: Date | string,
         endDate: Date | string,
@@ -103,6 +100,24 @@ export class CacheService {
         newCacheResult.bounds = bounds;
         this.cache.set(this.getKey(ticker, specificColumn), newCacheResult);
     };
+
+    getHistoricalData(ticker: string) {
+        const cacheKey = `${ticker}-historical`;
+        const cachedHistoricalData: any = this.cache.get(cacheKey);
+        return cachedHistoricalData;
+    }
+
+    cacheHistoricalData(ticker: string, twapValues: any) {
+        const cacheKey = `${ticker}-historical`;
+        this.cache.set(cacheKey, {
+            fetchedDay: new Date(),
+            data: twapValues
+        });
+    }
+
+    private getKey(ticker: string, specificColumn: number = -1) {
+        return `${ticker}-${specificColumn}`;
+    }
 }
 
 export const cache = new CacheService();

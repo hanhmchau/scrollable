@@ -167,7 +167,7 @@ router.get(
         const url = req.originalUrl;
         const format = url.slice(url.indexOf('.') + 1);
         try {
-            const reportService = ReportService.getReportService();
+            const reportService = new ReportService();
             const fileName = `${ticker}.${format}`;
             const { content } = await reportService.getHistoricalData(
                 ticker,
@@ -200,7 +200,7 @@ router.get(
         const { ticker = '' } = { ...req.params };
         const fileName = 'alerts.dat';
         try {
-            const reportService = ReportService.getReportService();
+            const reportService = new ReportService();
             const content = await reportService.getAlertData(ticker);
             const fileContent = Buffer.from(content);
             const readStream = new stream.PassThrough();

@@ -21,7 +21,7 @@ export class EndOfDayService {
         endDate?: Date | string,
         specificColumn?: number
     ) => {
-        const cachedResult = cache.extractFromCache(ticker, startDate, endDate, specificColumn);
+        const cachedResult = cache.getDailyStats(ticker, startDate, endDate, specificColumn);
         if (cachedResult) {
             return cachedResult;
         }
@@ -40,7 +40,7 @@ export class EndOfDayService {
         );
 
         const dataset = response.data.dataset_data;
-        cache.cacheResult(ticker, startDate, endDate, specificColumn, dataset);
+        cache.cacheDailyStats(ticker, startDate, endDate, specificColumn, dataset);
         return dataset;
     };
 
