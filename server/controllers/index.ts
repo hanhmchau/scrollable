@@ -34,7 +34,30 @@ router.get(
 );
 
 router.get(
-    '/:ticker/full-name',
+    '/tickers/close-prices',
+    asynchronify(async (req: Request, res: Response) => {
+        const { startDate = '', endDate = '', symbols = '' } = { ...req.query };
+        const tickers: string[] = symbols.split(',');
+        try {
+            const eodService = new EndOfDayService();
+            const data = await eodService.getClosePrices(
+                tickers,
+                startDate,
+                endDate
+            );
+            res.json({
+                prices: {
+                    dateClose: data
+                }
+            });
+        } catch (e) {
+            res.status(404).json(createError(e));
+        }
+    })
+);
+
+router.get(
+    '/tickers/:ticker',
     asynchronify(async (req: Request, res: Response) => {
         const ticker = req.params.ticker;
         try {
@@ -55,76 +78,7 @@ router.get(
 );
 
 router.get(
-    '/:ticker/close-price',
-    asynchronify(async (req: Request, res: Response) => {
-        const { startDate = '', endDate = '' } = { ...req.query };
-        const ticker = req.params.ticker;
-        try {
-            const eodService = new EndOfDayService();
-            const data = await eodService.getClosePrice(
-                ticker,
-                startDate,
-                endDate
-            );
-            res.json({
-                prices: {
-                    ticker,
-                    dateClose: data
-                }
-            });
-        } catch (e) {
-            res.status(404).json(createError(e));
-        }
-    })
-);
-
-router.get(
-    '/close-price',
-    asynchronify(async (req: Request, res: Response) => {
-        const { startDate = '', endDate = '', symbols = '' } = { ...req.query };
-        const ticker = req.params.ticker;
-        const tickers: string[] = symbols.split(',');
-        try {
-            const eodService = new EndOfDayService();
-            const data = await eodService.getClosePrices(
-                tickers,
-                startDate,
-                endDate
-            );
-            res.json({
-                prices: {
-                    ticker,
-                    dateClose: data
-                }
-            });
-        } catch (e) {
-            res.status(404).json(createError(e));
-        }
-    })
-);
-
-router.get(
-    '/:ticker/200mda',
-    asynchronify(async (req: Request, res: Response) => {
-        // tslint:disable-next-line:no-unnecessary-initializer
-        const { startDate = '', days = 200 } = { ...req.query };
-        const ticker = req.params.ticker;
-        const eodService = new EndOfDayService();
-        const result = await eodService.getMovingDayAverage(
-            ticker,
-            startDate,
-            days
-        );
-        if (result.succeeded) {
-            res.json(result);
-        } else {
-            res.status(404).json(result);
-        }
-    })
-);
-
-router.get(
-    '/multi200mda',
+    '/tickers/multi200mda',
     asynchronify(async (req: Request, res: Response) => {
         // tslint:disable-next-line:no-unnecessary-initializer
         const { startDate = '', days = 200 } = { ...req.query };
@@ -163,13 +117,57 @@ router.get(
 );
 
 router.get(
-    '/:ticker/download/twap.(json|csv)',
+    '/tickers/:ticker/close-price',
+    asynchronify(async (req: Request, res: Response) => {
+        const { startDate = '', endDate = '' } = { ...req.query };
+        const ticker = req.params.ticker;
+        try {
+            const eodService = new EndOfDayService();
+            const data = await eodService.getClosePrice(
+                ticker,
+                startDate,
+                endDate
+            );
+            res.json({
+                prices: {
+                    ticker,
+                    dateClose: data
+                }
+            });
+        } catch (e) {
+            res.status(404).json(createError(e));
+        }
+    })
+);
+
+router.get(
+    '/tickers/:ticker/200mda',
+    asynchronify(async (req: Request, res: Response) => {
+        // tslint:disable-next-line:no-unnecessary-initializer
+        const { startDate = '', days = 200 } = { ...req.query };
+        const ticker = req.params.ticker;
+        const eodService = new EndOfDayService();
+        const result = await eodService.getMovingDayAverage(
+            ticker,
+            startDate,
+            days
+        );
+        if (result.succeeded) {
+            res.json(result);
+        } else {
+            res.status(404).json(result);
+        }
+    })
+);
+
+router.get(
+    '/tickers/:ticker/download/twap.(json|csv)',
     asynchronify(async (req: Request, res: Response) => {
         const { ticker = '' } = { ...req.params };
         const url = req.originalUrl;
         const format = url.slice(url.indexOf('.') + 1);
         try {
-            const reportService = new ReportService();
+            const reportService = ReportService.getReportService();
             const fileName = `${ticker}.${format}`;
             const { content } = await reportService.getHistoricalData(
                 ticker,
@@ -197,14 +195,13 @@ router.get(
 );
 
 router.get(
-    '/:ticker/download/alerts.dat',
+    '/tickers/:ticker/download/alerts.dat',
     asynchronify(async (req: Request, res: Response) => {
         const { ticker = '' } = { ...req.params };
         const fileName = 'alerts.dat';
         try {
-            const reportService = new ReportService();
+            const reportService = ReportService.getReportService();
             const content = await reportService.getAlertData(ticker);
-            console.log(content.length);
             const fileContent = Buffer.from(content);
             const readStream = new stream.PassThrough();
             readStream.end(fileContent);

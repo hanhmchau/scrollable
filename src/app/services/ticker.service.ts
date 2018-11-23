@@ -29,7 +29,7 @@ export class TickerService {
             params = params.set('endDate', format(endDate, consts.DATE_FORMAT));
         }
         return this.http
-            .get<Ticker[]>(`/api/close-price`, {
+            .get<Ticker[]>(`/api/tickers/close-prices`, {
                 params
             })
             .pipe(
@@ -80,7 +80,7 @@ export class TickerService {
 
     getFullName(symbol: string): Observable<any> {
         return this.http
-            .get<any>(`/api/${symbol}/full-name`)
+            .get<any>(`/api/tickers/${symbol}`)
             .pipe(catchError(err => of(undefined)));
     }
 
