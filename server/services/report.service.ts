@@ -6,10 +6,19 @@ import { SMACalculator } from './../utils/sma';
 import * as NodeCache from 'node-cache';
 
 export class ReportService {
+    private static reportService: ReportService;
+    // tslint:disable-next-line:member-ordering
+    static getReportService() {
+        if (!this.reportService) {
+            this.reportService = new ReportService();
+        }
+        return this.reportService;
+    }
+
     private cache: NodeCache;
     private eodService: EndOfDayService;
 
-    constructor() {
+    private constructor() {
         this.cache = new NodeCache({ stdTTL: 1000, checkperiod: 1200 });
         this.eodService = new EndOfDayService();
     }
@@ -101,7 +110,7 @@ export class ReportService {
         return twapValues;
     };
 
-    private calculateTwapValues = async (data: any[]) => {
+    private calculateTwapValues = (data: any[]): any[] => {
         const content: any[] = [];
         let twapOpen = 0;
         let twapHigh = 0;
@@ -112,9 +121,6 @@ export class ReportService {
         const lwma15: LMWACalculator = new LMWACalculator(15);
         const lwma50: LMWACalculator = new LMWACalculator(50);
         data.forEach((day, index) => {
-            if (index === 0) {
-                console.log(day);
-            }
             const date = day[0];
             const open = day[1];
             const high = day[2];
