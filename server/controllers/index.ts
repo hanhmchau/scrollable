@@ -57,27 +57,6 @@ router.get(
 );
 
 router.get(
-    '/tickers/:ticker',
-    asynchronify(async (req: Request, res: Response) => {
-        const ticker = req.params.ticker;
-        try {
-            const tickerService = new TickerService();
-            const name = await tickerService.getTicker(ticker);
-            if (name) {
-                res.json(name);
-            } else {
-                res.status(404).json({
-                    message:
-                        'You have submitted an incorrect Quandl code. Please check your Quandl codes and try again'
-                });
-            }
-        } catch (e) {
-            res.status(404).json(createError(e));
-        }
-    })
-);
-
-router.get(
     '/tickers/multi200mda',
     asynchronify(async (req: Request, res: Response) => {
         // tslint:disable-next-line:no-unnecessary-initializer
@@ -112,6 +91,27 @@ router.get(
                 message:
                     'Start date parameter is missing. Please check your API syntax and try again'
             });
+        }
+    })
+);
+
+router.get(
+    '/tickers/:ticker',
+    asynchronify(async (req: Request, res: Response) => {
+        const ticker = req.params.ticker;
+        try {
+            const tickerService = new TickerService();
+            const name = await tickerService.getTicker(ticker);
+            if (name) {
+                res.json(name);
+            } else {
+                res.status(404).json({
+                    message:
+                        'You have submitted an incorrect Quandl code. Please check your Quandl codes and try again'
+                });
+            }
+        } catch (e) {
+            res.status(404).json(createError(e));
         }
     })
 );

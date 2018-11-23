@@ -21,7 +21,12 @@ export class EndOfDayService {
         endDate?: Date | string,
         specificColumn?: number
     ) => {
-        const cachedResult = cache.getDailyStats(ticker, startDate, endDate, specificColumn);
+        const cachedResult = cache.getDailyStats(
+            ticker,
+            startDate,
+            endDate,
+            specificColumn
+        );
         if (cachedResult) {
             return cachedResult;
         }
@@ -40,7 +45,13 @@ export class EndOfDayService {
         );
 
         const dataset = response.data.dataset_data;
-        cache.cacheDailyStats(ticker, startDate, endDate, specificColumn, dataset);
+        cache.cacheDailyStats(
+            ticker,
+            startDate,
+            endDate,
+            specificColumn,
+            dataset
+        );
         return dataset;
     };
 
@@ -129,11 +140,7 @@ export class EndOfDayService {
     ) => {
         const eodService = new EndOfDayService();
         try {
-            const mda = await this.getAverage(
-                ticker,
-                this.formatDate(startDate),
-                days
-            );
+            const mda = await this.getAverage(ticker, startDate, days);
             if (mda) {
                 return {
                     succeeded: true,
@@ -145,8 +152,8 @@ export class EndOfDayService {
                     }
                 };
             }
+            const date = await eodService.getFirstAvailableDate(ticker);
             if (startDate) {
-                const date = await eodService.getFirstAvailableDate(ticker);
                 return {
                     succeeded: false,
                     data: new Error(
@@ -160,7 +167,10 @@ export class EndOfDayService {
                 return {
                     succeeded: false,
                     data: new Error(
-                        'Start date parameter is missing. Please check your API syntax and try again.'
+                        'Start date parameter is missing. Please check your API syntax and try again.',
+                        {
+                            first_possible_date: this.formatDate(date)
+                        }
                     )
                 };
             }
@@ -177,7 +187,7 @@ export class EndOfDayService {
         startDate: Date | string,
         days: number
     ) => {
-        const endDate = addDays(startDate, days);
+        const endDate = startDate ? addDays(startDate, days) : '';
         const result = await this.getDailyStats(
             ticker,
             startDate,
@@ -185,7 +195,7 @@ export class EndOfDayService {
             consts.COLUMN_INDEX.END_OF_DAY
         );
         const dataset = result.data;
-        if (dataset.length) {
+        if (startDate && dataset.length) {
             return (
                 dataset.reduce(
                     (prev: number, curr: any[]) => prev + curr[1],
