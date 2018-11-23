@@ -13,7 +13,8 @@
         "build-dev": "webpack --env development",
         "test": "echo \"Error: no test specified\" && exit 1",
         "postinstall": "webpack --aot --env production",
-        "typedoc": "typedoc .\\server\\services\\ --out doc --module commonjs --hideGenerator --excludeExternals --excludeNotExported --excludePrivate",
+        "typedoc": "typedoc .\\server\\services\\ --out docs --module commonjs --hideGenerator --excludeExternals --excludeNotExported --excludePrivate",
+        "swagger": "ts-node ./server/swagger.ts",
         "tsc": "tsc"
     },
     "keywords": [],
@@ -68,6 +69,7 @@
         "@types/json2csv": "^4.2.0",
         "@types/node": "^10.9.4",
         "@types/node-cache": "^4.1.1",
+        "@types/swagger-jsdoc": "0.0.2",
         "axios": "^0.18.0",
         "body-parser": "^1.18.3",
         "cookie-parser": "^1.4.3",
@@ -85,6 +87,7 @@
         "npm": "^6.4.1",
         "queue-fifo": "^0.2.5",
         "rxjs": "^6.3.2",
+        "swagger-jsdoc": "^3.2.3",
         "ts-node": "^7.0.1",
         "typescript": "^3.1.6"
     }
