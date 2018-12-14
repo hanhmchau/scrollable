@@ -2,10 +2,9 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 import * as express from 'express';
 import * as path from 'path';
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 3000;
 import * as cors from 'cors';
 const app: express.Application = express();
-import mainController from './server/controllers';
 import * as cookieParser from 'cookie-parser';
 import * as bodyParser from 'body-parser';
 
@@ -20,9 +19,6 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(cookieParser());
-
-// api router
-app.use('/api', mainController);
 
 // the __dirname is the current directory from where the script is running
 const dist = path.resolve(__dirname, 'dist');
