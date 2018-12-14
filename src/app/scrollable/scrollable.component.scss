@@ -9,7 +9,6 @@ $thumb-color-active: #828282;
 }
 
 .container {
-    color: gray;
     overflow: hidden;
     box-sizing: border-box;
     position: relative;
@@ -35,13 +34,10 @@ $thumb-color-active: #828282;
         border-radius: 10px;
         box-sizing: border-box;
         transition: opacity 0.3s ease-in-out;
+        opacity: 0;
 
         &.hide {
             display: none;
-        }
-
-        &.auto-hide {
-            opacity: 0;
         }
 
         .bar {

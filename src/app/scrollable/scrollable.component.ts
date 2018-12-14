@@ -14,7 +14,8 @@ import {
     skipWhile,
     startWith,
     takeUntil,
-    throttleTime
+    throttleTime,
+    distinctUntilChanged
 } from 'rxjs/operators';
 import { UnsubscriberComponent } from '../unsubscriber/unsubscriber.component';
 
@@ -35,10 +36,19 @@ export class ScrollableComponent extends UnsubscriberComponent {
     @ViewChild('thumb') thumbRef: ElementRef;
     @ViewChild('scrollbar') scrollbarRef: ElementRef;
 
-    @Input() height: number = 300;
+    @Input()
+    set height(value: number) {
+        this._height = value;
+        this.initializeStyles();
+    }
     @Input() distanceToBottom = 50;
     @Input() distanceToTop = 50;
-    @Input() autoHide = true;
+    @Input()
+    set autoHide(value: boolean) {
+        this._autoHide = value;
+        this.activeScrollbar = !value;
+        this.updateScrollbar();
+    }
     @Input() padding = 25;
     @Input() thumbClass: string;
     @Input() barClass: string;
@@ -49,6 +59,8 @@ export class ScrollableComponent extends UnsubscriberComponent {
     @Output() reachedTop = new EventEmitter();
 
     private scrolling = new Subject<number>();
+    private _height: number = 300;
+    private _autoHide = true;
     private scrollableZone = 25;
     private scrollbarStyle = {
         width: `${this.thumbWidth + this.scrollableZone * 2}px`,
@@ -59,12 +71,13 @@ export class ScrollableComponent extends UnsubscriberComponent {
         height: '0'
     };
     private containerStyle = {
-        height: `${this.height}px`,
+        height: `${this._height}px`,
         padding: `${this.padding}px`
     };
     private isDraggingThumb = false;
     private scrollbarOffset = 0;
     private visibleContentHeight = 0;
+    private realContentHeight = 0;
     private thumbHeight = 0;
     private showScrollbar = false;
     private activeScrollbar = false;
@@ -90,7 +103,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
 
     initializeStyles() {
         this.containerStyle = {
-            height: `${this.height}px`,
+            height: `${this._height}px`,
             padding: `${this.padding}px`
         };
         this.scrollbarStyle = {
@@ -100,20 +113,20 @@ export class ScrollableComponent extends UnsubscriberComponent {
     }
 
     ngAfterContentChecked(): void {
-        this.updateScrollbar();
+        // this.updateScrollbar();
     }
 
     scrollToTop(): Observable<any> {
         return Observable.create((observer: Observer<any>) => {
             this.scrollTo(0);
-            observer.next(null);
+            observer.next(1);
         });
     }
 
     scrollToBottom(): Observable<any> {
         return Observable.create((observer: Observer<any>) => {
             this.scrollTo(this.getRealContentHeight());
-            observer.next(null);
+            observer.next(1);
         });
     }
 
@@ -123,7 +136,8 @@ export class ScrollableComponent extends UnsubscriberComponent {
             .pipe(
                 takeUntil(this.onDestroyed),
                 throttleTime(100),
-                startWith(this.calculateThumbOffset()),
+                startWith(0),
+                distinctUntilChanged(),
                 pairwise()
             )
             .subscribe(([lastOffsetTop, currentOffsetTop]) => {
@@ -133,7 +147,8 @@ export class ScrollableComponent extends UnsubscriberComponent {
                 }
                 if (
                     !isScrollingUp &&
-                    currentOffsetTop >= this.distanceToBottom
+                    currentOffsetTop + this.getVisibleContentHeight() >=
+                        this.getRealContentHeight() - this.distanceToBottom
                 ) {
                     this.reachedBottom.emit();
                 }
@@ -149,7 +164,9 @@ export class ScrollableComponent extends UnsubscriberComponent {
                 debounceTime(1000)
             )
             .subscribe(() => {
-                this.activeScrollbar = false;
+                if (this._autoHide) {
+                    this.activeScrollbar = false;
+                }
             });
     }
 
@@ -174,12 +191,13 @@ export class ScrollableComponent extends UnsubscriberComponent {
                 ...this.thumbStyle,
                 top: `${top}px`
             };
+            const contentOffset = this.calculateContentOffset(top);
             this.renderer.setProperty(
                 this.viewportRef.nativeElement,
                 'scrollTop',
-                this.calculateContentOffset(top).toString()
+                contentOffset.toString()
             );
-            this.scrolling.next(top);
+            this.scrolling.next(contentOffset);
         }
     }
 
@@ -190,7 +208,6 @@ export class ScrollableComponent extends UnsubscriberComponent {
     private onScrollbarClick(e: any): void {
         if (!this.isDraggingThumb && e.target !== this.thumbRef.nativeElement) {
             const clickDirection = this.getClickDirection(e);
-            console.log(clickDirection);
             if (clickDirection === Direction.Down) {
                 this.scrollDown();
             }
@@ -205,11 +222,12 @@ export class ScrollableComponent extends UnsubscriberComponent {
         this.showScrollbar = this.shouldShowScrollbar();
         const thumbOffset = this.calculateThumbOffset();
         const thumbHeight = this.calculateThumbHeight();
+        const realOffset = this.calculateContentOffset(thumbOffset);
         this.thumbStyle = {
             top: `${thumbOffset}px`,
             height: `${thumbHeight}px`
         };
-        this.scrolling.next(thumbOffset);
+        this.scrolling.next(realOffset);
     }
 
     private shouldShowScrollbar(): boolean {

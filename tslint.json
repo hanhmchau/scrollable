@@ -13,6 +13,7 @@
         "no-submodule-imports": [
             false
         ],
-        "arrow-parens": [false]
+        "arrow-parens": [false],
+        "variable-name": [false]
     }
 }
