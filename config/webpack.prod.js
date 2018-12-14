@@ -15,9 +15,6 @@ const bundle = path.join(PATHS.build, 'main.js');
 module.exports = merge([
     parts.generateSourceMaps('nosources-source-map'),
     parts.splitChunks(),
-    parts.extractGlobalCSS({
-        exclude: PATHS.app,
-    }),
     // parts.purifyCSS({
     //     paths: [bundle],
     //     verbose: true

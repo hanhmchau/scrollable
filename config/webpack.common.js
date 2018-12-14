@@ -26,5 +26,8 @@ module.exports = merge([{
     parts.raw({
         include: PATHS.app
    }),
+   parts.rawSass({
+       include: PATHS.app
+   }),
    parts.dotEnv()
 ]);

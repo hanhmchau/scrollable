@@ -43,10 +43,23 @@ exports.raw = ({ include, exclude } = {}) => ({
     module: {
         rules: [
             {
-                test: /\.(css|html)?$/,
+                test: /\.(html)?$/,
                 include,
                 exclude,
                 loader: "raw-loader"
+            }
+        ]
+    }
+});
+
+exports.rawSass = ({ include, exclude } = {}) => ({
+    module: {
+        rules: [
+            {
+                test: /\.(scss)?$/,
+                include,
+                exclude,
+                loader: ["raw-loader", "sass-loader"]
             }
         ]
     }
@@ -76,10 +89,10 @@ exports.loadCSS = ({ include, exclude } = {}) => ({
     module: {
         rules: [
             {
-                test: /styles.css$/,
+                test: /styles.scss$/,
                 include,
                 exclude,
-                use: ["style-loader", "css-loader"]
+                use: ["style-loader", "css-loader", "sass-loader"]
             }
         ]
     }
@@ -87,17 +100,17 @@ exports.loadCSS = ({ include, exclude } = {}) => ({
 
 exports.extractGlobalCSS = ({ include, exclude } = {}) => {
     const plugin = new MiniCssExtractPlugin({
-        filename: "[name].css"
+        filename: "[name].scss"
     });
 
     return {
         module: {
             rules: [
                 {
-                    test: /\.css$/,
+                    test: /\.scss$/,
                     include,
                     exclude,
-                    use: [MiniCssExtractPlugin.loader, "css-loader"]
+                    use: [MiniCssExtractPlugin.loader, "css-loader", "sass-loader"]
                 }
             ]
         },
@@ -120,10 +133,10 @@ exports.loadCSS = ({ include, exclude }) => ({
     module: {
         rules: [
             {
-                test: /\.css$/,
+                test: /\.scss$/,
                 include,
                 exclude,
-                use: ["style-loader", "css-loader"]
+                use: ["style-loader", "css-loader", "sass-loader"]
             }
         ]
     }
