@@ -1,5 +1,5 @@
 <div class="container" [ngStyle]="containerStyle" [ngClass]="containerClass">
-    <div class="viewport" (scroll)="updateScrollbar()" #viewport>
+    <div class="viewport" #viewport>
         <div class="content" #content><ng-content #content></ng-content></div>
     </div>
     <div

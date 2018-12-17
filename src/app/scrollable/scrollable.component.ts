@@ -97,6 +97,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
                 this.isDraggingThumb = false;
             });
 
+        this.addScrollSubscription();
         this.addReachedEndsSubscription();
         this.addAutohideSubscription();
     }
@@ -128,6 +129,30 @@ export class ScrollableComponent extends UnsubscriberComponent {
             this.scrollTo(this.getRealContentHeight());
             observer.next(1);
         });
+    }
+
+    private addScrollSubscription() {
+        const scrollEvent$ = fromEvent(
+            this.viewportRef.nativeElement,
+            'scroll'
+        );
+        scrollEvent$
+            .pipe(
+                takeUntil(this.onDestroyed),
+                throttleTime(100)
+            )
+            .subscribe(e => {
+                this.updateScrollbar();
+            });
+
+        scrollEvent$
+            .pipe(
+                takeUntil(this.onDestroyed),
+                debounceTime(50)
+            )
+            .subscribe(e => {
+                this.updateScrollbar();
+            });
     }
 
     private addReachedEndsSubscription() {
