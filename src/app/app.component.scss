@@ -1,18 +1,27 @@
-.container {
-    display: grid;
-    grid-template-columns: 30% 70%;
+.options {
+    width: 30%;
+    float: left;
+    padding: 20px 40px;
 
-    .options {
-        padding: 20px 40px;
+    mat-slider {
+        width: 100%;
+    }
 
-        mat-slider {
-            width: 100%;
-        }
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
 
-        .actions {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+
+@supports (display: grid) {
+    .container {
+        display: grid;
+        grid-template-columns: 30% 70%;
+
+        .options {
+            width: unset;
         }
     }
 }
