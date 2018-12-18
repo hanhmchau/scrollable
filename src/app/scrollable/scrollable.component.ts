@@ -149,7 +149,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
         scrollEvent$
             .pipe(
                 takeUntil(this.onDestroyed),
-                debounceTime(50)
+                debounceTime(100)
             )
             .subscribe(e => {
                 this.updateScrollbar();
