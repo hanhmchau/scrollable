@@ -1,5 +1,5 @@
 .options {
-    width: 30%;
+    width: 100%;
     float: left;
     padding: 20px 40px;
 
@@ -9,8 +9,14 @@
 
     .actions {
         display: flex;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        justify-content: flex-start;
         align-items: center;
+
+        button {
+            margin-bottom: 8px;
+            margin-right: 10px;
+        }
     }
 }
 
@@ -18,10 +24,38 @@
 @supports (display: grid) {
     .container {
         display: grid;
-        grid-template-columns: 30% 70%;
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
 
         .options {
             width: unset;
+        }
+    }
+}
+
+@media all and (min-width: 991px) {
+    .options {
+        width: 30%;
+    }
+
+    @supports (display: grid) {
+        .container {
+            display: grid;
+            grid-template-columns: 30% 70%;
+    
+            .options {
+                width: unset;
+            }
+        }
+    }
+
+    .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        > * {
+            margin-right: 0;
         }
     }
 }
