@@ -40,6 +40,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
     set height(value: number) {
         this._height = value;
         this.initializeStyles();
+        this.updateScrollbar();
     }
     @Input() distanceToBottom = 50;
     @Input() distanceToTop = 50;
@@ -302,7 +303,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
     }
 
     private getVisibleContentHeight() {
-        return this.viewportRef.nativeElement.clientHeight;
+        return this._height - this.padding * 2;
     }
 
     private getRealContentHeight() {
