@@ -1,4 +1,4 @@
-<div class="container" [ngStyle]="containerStyle" [ngClass]="containerClass">
+<div class="container" [ngStyle]="containerStyle" [ngClass]="containerClass" (mouseenter)="onContentMouseenter()" (mouseleave)="onContentMouseleave()">
     <div class="viewport" #viewport>
         <div class="content" #content><ng-content #content></ng-content></div>
     </div>

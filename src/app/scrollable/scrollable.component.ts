@@ -1,21 +1,17 @@
-import {
-    Component,
-    ElementRef,
-    EventEmitter,
-    Input,
-    Output,
-    Renderer2,
-    ViewChild
-} from '@angular/core';
-import { fromEvent, Subject, Observable, Observer, of } from 'rxjs';
+import { Component, ElementRef, EventEmitter, Input, Output, Renderer2, ViewChild } from '@angular/core';
+import { fromEvent, Observable, Observer, of, Subject, Subscription, interval } from 'rxjs';
 import {
     debounceTime,
+    delay,
+    distinctUntilChanged,
     pairwise,
     skipWhile,
     startWith,
     takeUntil,
     throttleTime,
-    distinctUntilChanged
+    switchMap,
+    take,
+    map
 } from 'rxjs/operators';
 import { UnsubscriberComponent } from '../unsubscriber/unsubscriber.component';
 
@@ -82,6 +78,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
     private thumbHeight = 0;
     private showScrollbar = false;
     private activeScrollbar = false;
+    private hideScrollbarSubscription = Subscription.EMPTY;
 
     constructor(private renderer: Renderer2) {
         super();
@@ -95,12 +92,13 @@ export class ScrollableComponent extends UnsubscriberComponent {
                 skipWhile(() => !this.isDraggingThumb)
             )
             .subscribe(e => {
-                this.isDraggingThumb = false;
+                this.onDragEnd();
             });
 
         this.addScrollSubscription();
         this.addReachedEndsSubscription();
         this.addAutohideSubscription();
+        this.pollForContentHeightChange();
     }
 
     initializeStyles() {
@@ -132,19 +130,39 @@ export class ScrollableComponent extends UnsubscriberComponent {
         });
     }
 
-    private addScrollSubscription() {
-        const scrollEvent$ = fromEvent(
-            this.viewportRef.nativeElement,
-            'scroll'
-        );
-        scrollEvent$
+    private pollForContentHeightChange() {
+        interval(500)
             .pipe(
                 takeUntil(this.onDestroyed),
-                throttleTime(100)
+                map(() => this.getRealContentHeight()),
+                distinctUntilChanged()
             )
-            .subscribe(e => {
+            .subscribe(contentHeight => {
                 this.updateScrollbar();
             });
+    }
+
+    private onContentMouseenter() {
+        this.activeScrollbar = true;
+        this.hideScrollbarSubscription = of(true)
+            .pipe(
+                takeUntil(this.onDestroyed),
+                delay(2000)
+            )
+            .subscribe(() => {
+                this.fadeScrollbarAway();
+            });
+    }
+
+    private onContentMouseleave() {
+        this.fadeScrollbarAway();
+    }
+
+    private addScrollSubscription() {
+        const scrollEvent$ = fromEvent(this.viewportRef.nativeElement, 'scroll');
+        scrollEvent$.pipe(takeUntil(this.onDestroyed)).subscribe(e => {
+            this.updateScrollbar();
+        });
 
         scrollEvent$
             .pipe(
@@ -168,16 +186,14 @@ export class ScrollableComponent extends UnsubscriberComponent {
             )
             .subscribe(([lastOffsetTop, currentOffsetTop]) => {
                 const isScrollingUp = lastOffsetTop > currentOffsetTop;
-                if (isScrollingUp && currentOffsetTop <= this.distanceToTop) {
+                if (isScrollingUp && currentOffsetTop <= this.distanceToTop && lastOffsetTop > this.distanceToTop) {
                     this.reachedTop.emit();
                 }
-                if (
-                    !isScrollingUp &&
-                    currentOffsetTop + this.getVisibleContentHeight() >=
-                        this.getRealContentHeight() - this.distanceToBottom
-                ) {
+                const bottomCutoff = this.getRealContentHeight() - this.distanceToBottom - this.getVisibleContentHeight();
+                if (!isScrollingUp && currentOffsetTop >= bottomCutoff && lastOffsetTop < bottomCutoff) {
                     this.reachedBottom.emit();
                 }
+                this.hideScrollbarSubscription.unsubscribe();
                 this.activeScrollbar = true;
             });
     }
@@ -190,9 +206,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
                 debounceTime(1000)
             )
             .subscribe(() => {
-                if (this._autoHide) {
-                    this.activeScrollbar = false;
-                }
+                this.fadeScrollbarAway();
             });
     }
 
@@ -206,29 +220,25 @@ export class ScrollableComponent extends UnsubscriberComponent {
 
     private onDrag(event: MouseEvent) {
         if (this.isDraggingThumb) {
-            const top = Math.min(
-                Math.max(
-                    event.clientY - this.scrollbarOffset - this.thumbHeight,
-                    0
-                ),
-                this.visibleContentHeight - this.thumbHeight
-            );
+            const top = Math.min(Math.max(event.clientY - this.scrollbarOffset - this.thumbHeight, 0), this.visibleContentHeight - this.thumbHeight);
             this.thumbStyle = {
                 ...this.thumbStyle,
                 top: `${top}px`
             };
             const contentOffset = this.calculateContentOffset(top);
-            this.renderer.setProperty(
-                this.viewportRef.nativeElement,
-                'scrollTop',
-                contentOffset.toString()
-            );
+            this.renderer.setProperty(this.viewportRef.nativeElement, 'scrollTop', contentOffset.toString());
             this.scrolling.next(contentOffset);
         }
     }
 
     private onDragEnd() {
         this.isDraggingThumb = false;
+    }
+
+    private fadeScrollbarAway() {
+        if (this._autoHide) {
+            this.activeScrollbar = false;
+        }
     }
 
     private onScrollbarClick(e: any): void {
@@ -273,11 +283,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
     }
 
     private scrollTo(scrollTop: number) {
-        this.renderer.setProperty(
-            this.viewportRef.nativeElement,
-            'scrollTop',
-            scrollTop.toString()
-        );
+        this.renderer.setProperty(this.viewportRef.nativeElement, 'scrollTop', scrollTop.toString());
     }
 
     private getClickDirection(e: any) {
