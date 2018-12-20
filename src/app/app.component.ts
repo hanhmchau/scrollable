@@ -26,7 +26,7 @@ export class AppComponent {
 
     generateLoremIpsum() {
         this.content += lorem({
-            count: 10000,
+            count: 5000,
             units: 'words',
             format: 'html'
         });
