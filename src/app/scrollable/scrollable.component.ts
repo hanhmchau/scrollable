@@ -220,7 +220,10 @@ export class ScrollableComponent extends UnsubscriberComponent {
 
     private onDrag(event: MouseEvent) {
         if (this.isDraggingThumb) {
-            const top = Math.min(Math.max(event.clientY - this.scrollbarOffset - this.thumbHeight, 0), this.visibleContentHeight - this.thumbHeight);
+            const top = Math.min(
+                Math.max(event.clientY - this.scrollbarOffset - this.thumbHeight / 2 - this.padding, 0),
+                this.visibleContentHeight - this.thumbHeight
+            );
             this.thumbStyle = {
                 ...this.thumbStyle,
                 top: `${top}px`
