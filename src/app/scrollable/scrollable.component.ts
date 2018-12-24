@@ -97,7 +97,6 @@ export class ScrollableComponent extends UnsubscriberComponent {
 
         this.addScrollSubscription();
         this.addReachedEndsSubscription();
-        this.addAutohideSubscription();
         this.pollForContentHeightChange();
     }
 
@@ -155,6 +154,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
     }
 
     private onContentMouseleave() {
+        this.hideScrollbarSubscription.unsubscribe();
         this.fadeScrollbarAway();
     }
 
