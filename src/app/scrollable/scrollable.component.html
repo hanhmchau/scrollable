@@ -1,26 +1,32 @@
-<div class="container" [ngStyle]="containerStyle" [ngClass]="containerClass" (mouseenter)="onContentMouseenter()" (mouseleave)="onContentMouseleave()">
+<div
+    class="container"
+    [ngStyle]="containerStyle"
+    [ngClass]="containerClass"
+    (mouseenter)="onContentMouseenter()"
+    (mouseleave)="onContentMouseleave()"
+>
     <div class="viewport" #viewport>
         <div class="content" #content><ng-content #content></ng-content></div>
-    </div>
-    <div
-        class="scrollbar"
-        [class.hide]="showScrollbar"
-        [class.active]="activeScrollbar"
-        [ngStyle]="scrollbarStyle"
-        (click)="onScrollbarClick($event)"
-        (mousemove)="onDrag($event)"
-        (blur)="onDragEnd($event)"
-        #scrollbar
-    >
-        <div class="bar" [ngClass]="barClass">
-            <div
-                class="thumb"
-                [ngClass]="thumbClass"
-                (mousedown)="onDragStart($event)"
-                (mouseup)="onDragEnd($event)"
-                [ngStyle]="thumbStyle"
-                #thumb
-            ></div>
+        <div
+            class="scrollbar"
+            [class.hide]="showScrollbar"
+            [class.active]="activeScrollbar"
+            [ngStyle]="scrollbarStyle"
+            (click)="onScrollbarClick($event)"
+            (mousemove)="onDrag($event)"
+            (blur)="onDragEnd($event)"
+            #scrollbar
+        >
+            <div class="bar" [ngClass]="barClass">
+                <div
+                    class="thumb"
+                    [ngClass]="thumbClass"
+                    (mousedown)="onDragStart($event)"
+                    (mouseup)="onDragEnd($event)"
+                    [ngStyle]="thumbStyle"
+                    #thumb
+                ></div>
+            </div>
         </div>
     </div>
 </div>

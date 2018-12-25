@@ -72,7 +72,8 @@ export class ScrollableComponent extends UnsubscriberComponent {
         padding: `${this.padding}px`
     };
     private isDraggingThumb = false;
-    private scrollbarOffset = 0;
+    private thumbOffset = 0;
+    private mouseDragOffset = 0;
     private visibleContentHeight = 0;
     private realContentHeight = 0;
     private thumbHeight = 0;
@@ -210,9 +211,9 @@ export class ScrollableComponent extends UnsubscriberComponent {
             });
     }
 
-    private onDragStart() {
+    private onDragStart(event: MouseEvent) {
         this.isDraggingThumb = true;
-        this.scrollbarOffset = this.scrollbarRef.nativeElement.getBoundingClientRect().top;
+        this.mouseDragOffset = event.clientY - this.thumbOffset;
         this.visibleContentHeight = this.getVisibleContentHeight();
         this.thumbHeight = this.calculateThumbHeight();
         return false;
@@ -221,7 +222,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
     private onDrag(event: MouseEvent) {
         if (this.isDraggingThumb) {
             const top = Math.min(
-                Math.max(event.clientY - this.scrollbarOffset - this.thumbHeight / 2 - this.padding, 0),
+                Math.max(event.clientY - this.mouseDragOffset, 0),
                 this.visibleContentHeight - this.thumbHeight
             );
             this.thumbStyle = {
@@ -262,6 +263,7 @@ export class ScrollableComponent extends UnsubscriberComponent {
         const thumbOffset = this.calculateThumbOffset();
         const thumbHeight = this.calculateThumbHeight();
         const realOffset = this.calculateContentOffset(thumbOffset);
+        this.thumbOffset = thumbOffset;
         this.thumbStyle = {
             top: `${thumbOffset}px`,
             height: `${thumbHeight}px`
