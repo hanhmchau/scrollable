@@ -39,7 +39,7 @@
             </div>
         </div>
     </div>
-    <app-scrollable
+    <scrollable
         [height]="height"
         [autoHide]="autoHide"
         #scrollable
@@ -47,5 +47,5 @@
         (reachedBottom)="onReachedBottom()"
     >
         <div class="content" [innerHTML]="content"></div>
-    </app-scrollable>
+    </scrollable>
 </div>

@@ -22,7 +22,7 @@ enum Direction {
 
 // tslint:disable-next-line:max-classes-per-file
 @Component({
-    selector: 'app-scrollable',
+    selector: 'scrollable',
     templateUrl: './scrollable.component.html',
     styleUrls: ['./scrollable.component.scss']
 })
